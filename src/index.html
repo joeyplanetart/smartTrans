@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f8f7">
+  <title>Smart Translation · 中英 AI 翻译</title>
+  <meta name="description" content="在一个编辑面板中完成中英翻译、插入与替换，保留 Markdown 格式。">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><span>译</span></span><span>smart<span class="brand-strong">Trans</span></span></div>
+      <div class="top-actions">
+        <span class="top-note">中英双向 · 保留格式</span>
+        <button class="icon-button" id="shortcutsButton" type="button" aria-label="查看快捷键" title="快捷键">⌘</button>
+        <button class="settings-button" id="settingsButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4a8 8 0 0 0-.1-1.2l1.7-1.3-1.7-3-2 .8a8 8 0 0 0-2.1-1.2L15.5 4h-3l-.4 2.1a8 8 0 0 0-2.1 1.2l-2-.8-1.7 3L8 10.8a8 8 0 0 0 0 2.4l-1.7 1.3 1.7 3 2-.8a8 8 0 0 0 2.1 1.2l.4 2.1h3l.4-2.1a8 8 0 0 0 2.1-1.2l2 .8 1.7-3-1.7-1.3A8 8 0 0 0 20 12Z"/></svg><span>设置</span></button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="intro">
+        <div class="eyebrow"><span class="eyebrow-line"></span> SMART TRANSLATION</div>
+        <h1>中英翻译，<span>保留原意。</span></h1>
+        <p>输入全文或选中片段，翻译后直接插入或替换。尽可能保留原有排版。</p>
+      </div>
+
+      <section class="workspace" aria-label="翻译工作区">
+        <div class="panel-heading">
+          <div class="panel-title"><span class="panel-icon">文</span><div><h2>内容面板</h2><span>编辑、翻译、整理，一处完成</span></div></div>
+          <span class="privacy"><span class="privacy-dot"></span> 自动保存在本机</span>
+        </div>
+
+        <div class="editor-toolbar">
+          <div class="language-control" role="group" aria-label="翻译语言">
+            <span class="source-label">自动识别</span>
+            <span class="arrow" aria-hidden="true">→</span>
+            <button class="target-select" id="targetButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="targetLabel">英语</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5"/></svg></button>
+            <div class="target-menu hidden" id="targetMenu" role="listbox" aria-label="目标语言">
+              <button type="button" role="option" data-target="en">英语 <span>English</span></button>
+              <button type="button" role="option" data-target="zh">中文 <span>简体中文</span></button>
+            </div>
+          </div>
+          <span class="selection-indicator" id="selectionIndicator">翻译全部内容</span>
+        </div>
+
+        <div class="editor-wrap">
+          <textarea id="editor" spellcheck="false" aria-label="输入要翻译的内容" placeholder="在这里输入或粘贴中文、英文内容…&#10;&#10;支持 Markdown 标题、列表、粗体、链接等格式。&#10;也可以只选中其中一段进行翻译。"></textarea>
+          <div class="editor-bottom"><span id="characterCount">0 字符</span><span>支持 Markdown</span></div>
+        </div>
+
+        <div class="action-bar">
+          <div class="action-hint"><span class="sparkle">✦</span><span id="actionHint">选择目标语言，开始翻译</span></div>
+          <button class="translate-button" id="translateButton" type="button"><span>开始翻译</span><span class="shortcut-key">⌘ ↵</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-5-5 5 5-5 5"/></svg></button>
+        </div>
+
+        <div class="result hidden" id="result" aria-live="polite">
+          <div class="result-heading"><div><span class="result-sparkle">✦</span><span>翻译结果</span><span class="result-badge" id="resultBadge">英语</span></div><button class="close-result" id="closeResult" type="button" aria-label="关闭结果">×</button></div>
+          <pre class="translation-text" id="translationText"></pre>
+          <div class="result-actions">
+            <span class="result-note" id="resultNote">可插入到原文后，或直接替换原文</span>
+            <div class="result-buttons">
+              <button class="secondary-button" id="copyButton" type="button">复制译文</button>
+              <button class="secondary-button" id="insertButton" type="button">插入译文</button>
+              <button class="primary-button" id="replaceButton" type="button">替换原文</button>
+            </div>
+          </div>
+        </div>
+        <div class="error-message hidden" id="errorMessage" role="alert"></div>
+      </section>
+
+      <div class="footer-tips"><span><span class="tip-icon">↗</span> 支持选中段落翻译</span><span><span class="tip-icon">#</span> 尽量保留 Markdown</span><span><span class="tip-icon">⌘</span> 快捷键操作</span></div>
+    </main>
+  </div>
+
+  <dialog id="settingsDialog" class="modal">
+    <form method="dialog" class="modal-content">
+      <div class="modal-head"><h2>翻译设置</h2><button type="submit" aria-label="关闭">×</button></div>
+      <p>使用本机已登录的命令行工具翻译。请选择你偏好的翻译引擎。</p>
+      <label for="provider">AI 命令行工具</label>
+      <select id="provider"><option value="codex">Codex CLI</option><option value="cursor">Cursor CLI</option></select>
+      <p class="setting-footnote" id="providerStatus">正在检查工具状态…</p>
+      <button class="primary-button modal-save" id="saveSettings" type="submit">完成</button>
+    </form>
+  </dialog>
+  <dialog id="shortcutsDialog" class="modal">
+    <form method="dialog" class="modal-content">
+      <div class="modal-head"><h2>快捷键</h2><button type="submit" aria-label="关闭">×</button></div>
+      <div class="shortcut-row"><span>开始翻译</span><kbd>⌘ / Ctrl + Enter</kbd></div>
+      <div class="shortcut-row"><span>替换原文</span><kbd>⌘ / Ctrl + Shift + Enter</kbd></div>
+      <div class="shortcut-row"><span>插入译文</span><kbd>Alt + Enter</kbd></div>
+      <div class="shortcut-row"><span>关闭结果</span><kbd>Esc</kbd></div>
+    </form>
+  </dialog>
+  <script src="./renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+const path = require("node:path");
+const { app, BrowserWindow, ipcMain, clipboard, Menu } = require("electron");
+const { runTranslation, cliStatus } = require("./cli.cjs");
+
+let mainWindow;
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1120,
+    height: 840,
+    minWidth: 650,
+    minHeight: 620,
+    backgroundColor: "#f8f8f7",
+    title: "Smart Translation",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  mainWindow.loadFile(path.join(__dirname, "..", "src", "index.html"));
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  mainWindow.webContents.on("will-navigate", (event) => event.preventDefault());
+  mainWindow.webContents.on("context-menu", (_event, params) => {
+    if (!params.isEditable || !(params.selectionText || "").trim()) return;
+    Menu.buildFromTemplate([
+      { label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") },
+      { type: "separator" },
+      { role: "copy", label: "复制" },
+      { role: "selectAll", label: "全选" },
+    ]).popup({ window: mainWindow });
+  });
+  mainWindow.on("closed", () => { mainWindow = null; });
+}
+
+function fromMainWindow(event) {
+  if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error("Invalid caller");
+}
+
+app.whenReady().then(() => {
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    ...(process.platform === "darwin" ? [{ label: app.name, submenu: [{ role: "about" }, { type: "separator" }, { role: "quit" }] }] : []),
+    { label: "编辑", submenu: [
+      { role: "undo" }, { role: "redo" }, { type: "separator" },
+      { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" }
+    ] },
+    { label: "窗口", submenu: [{ role: "minimize" }, { role: "close" }] },
+  ]));
+  ipcMain.handle("translate", async (event, payload) => {
+    fromMainWindow(event);
+    return runTranslation(payload);
+  });
+  ipcMain.handle("cli-status", (event) => {
+    fromMainWindow(event);
+    return cliStatus();
+  });
+  ipcMain.handle("copy-text", (event, text) => {
+    fromMainWindow(event);
+    if (typeof text !== "string") throw new Error("Invalid text");
+    clipboard.writeText(text);
+  });
+  createWindow();
+  app.on("activate", () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
