@@ -84,7 +84,7 @@
             <button class="secondary-button" id="jiraLoginButton" type="button">连接 Jira</button>
             <button class="primary-button" id="jiraLoadButton" type="button">读取并翻译</button>
           </div>
-          <div class="jira-browser-tools"><p class="jira-hint">读取标题和描述，左侧原文、右侧译文，段落对齐并同步滚动。</p><button class="text-button" id="jiraBrowserButton" type="button">浏览器导入 ↗</button><button class="text-button" id="jiraImportClipboardButton" type="button">导入剪贴板数据</button></div>
+          <div class="jira-browser-tools"><p class="jira-hint">读取标题、描述和当前账号可见的评论，左右对照并同步滚动。</p><button class="text-button" id="jiraBrowserButton" type="button">浏览器导入 ↗</button><button class="text-button" id="jiraImportClipboardButton" type="button">导入剪贴板数据</button></div>
         </div>
         <div class="jira-state hidden" id="jiraState" role="status"></div>
         <div class="jira-error hidden" id="jiraError" role="alert"></div>
@@ -95,12 +95,13 @@
               <select id="jiraTarget" aria-label="Jira 译文语言"><option value="zh">译为中文</option><option value="en">译为英语</option></select>
               <button class="secondary-button" id="jiraTranslateButton" type="button">重新翻译</button>
               <button class="secondary-button hidden" id="jiraCancelButton" type="button">取消翻译</button>
+              <button class="secondary-button hidden" id="jiraMoreCommentsButton" type="button">导入更多评论 ↗</button>
               <button class="secondary-button" id="jiraCopyButton" type="button" disabled>复制完整译文</button>
             </div>
           </div>
           <p class="jira-warning hidden" id="jiraWarning"></p>
           <div class="jira-comparison" id="jiraComparison">
-            <div class="comparison-head"><span>原文 · 标题与描述</span><span id="jiraTranslationHeading">中文译文</span></div>
+            <div class="comparison-head"><span>原文 · 标题、描述与评论</span><span id="jiraTranslationHeading">中文译文</span></div>
             <div id="jiraRows"></div>
           </div>
         </div>

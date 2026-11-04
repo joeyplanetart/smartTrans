@@ -1,5 +1,5 @@
 const { test, expect } = require("bun:test");
-const { parseJiraUrl, adfMarkdown, issueDocument, readIssue, resolveConnection, importIssueJson } = require("../electron/jira.cjs");
+const { parseJiraUrl, adfMarkdown, issueDocument, readIssue, resolveConnection, importIssueJson, issueApiUrl } = require("../electron/jira.cjs");
 const { batches, splitTranslation } = require("../src/jira-core.js");
 const { protectMarkdown } = require("../electron/markdown.cjs");
 const paragraph = (text) => ({ type: "paragraph", content: [{ type: "text", text }] });
@@ -41,7 +41,7 @@ test("read-only Jira fetch requests only selected fields and never changes issue
   const calls = [];
   const result = await readIssue("https://planetart.atlassian.net/browse/WEB-128110", async (url, init) => {
     calls.push({ url, init });
-    return new Response(JSON.stringify(issue), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(url.includes("/comment?") ? { comments: [], startAt: 0, total: 0 } : issue), { headers: { "content-type": "application/json" } });
   });
   expect(result.ok).toBe(true);
   expect(calls[0].init.method).toBe("GET");
@@ -74,7 +74,8 @@ test("scoped tokens resolve Cloud ID without credentials then use only the Atlas
   const calls = [];
   const fetcher = async (url, init) => {
     calls.push({ url, init });
-    const value = url.endsWith("/_edge/tenant_info") ? { cloudId: "58d17b0e-b3cc-4ada-8ab4-94d9086dadc9" } : issue;
+    const value = url.endsWith("/_edge/tenant_info") ? { cloudId: "58d17b0e-b3cc-4ada-8ab4-94d9086dadc9" }
+      : url.includes("/comment?") ? { comments: [], startAt: 0, total: 0 } : issue;
     return new Response(JSON.stringify(value), { headers: { "content-type": "application/json" } });
   };
   const connection = await resolveConnection("https://planetart.atlassian.net/browse/WEB-128110",
@@ -84,6 +85,53 @@ test("scoped tokens resolve Cloud ID without credentials then use only the Atlas
   expect(calls[1].url).toStartWith("https://api.atlassian.com/ex/jira/58d17b0e-b3cc-4ada-8ab4-94d9086dadc9/rest/api/3/issue/WEB-128110");
   expect(calls[1].init.headers.Authorization).toStartWith("Basic ");
   expect(calls[1].init.redirect).toBe("manual");
+});
+const comment = (id, created, text) => ({
+  id, created, updated: created, author: { displayName: "Reviewer " + id },
+  self: "https://planetart.atlassian.net/rest/api/3/issue/WEB-128110/comment/" + id,
+  body: { type: "doc", content: [paragraph(text)] },
+});
+test("all comment pages are read and sorted by creation time without translating author metadata", async () => {
+  const calls = [];
+  const result = await readIssue("https://planetart.atlassian.net/browse/WEB-128110", async (url) => {
+    calls.push(url);
+    const value = !url.includes("/comment?") ? issue : url.includes("startAt=0")
+      ? { startAt: 0, total: 3, comments: [comment("2", "2026-11-02T00:00:00Z", "Second"), comment("1", "2026-11-01T00:00:00Z", "First")] }
+      : { startAt: 2, total: 3, comments: [comment("3", "2026-11-03T00:00:00Z", "Third")] };
+    return new Response(JSON.stringify(value), { headers: { "content-type": "application/json" } });
+  });
+  expect(calls[2]).toContain("startAt=2");
+  expect(result.issue.comments.map((c) => c.id)).toEqual(["1", "2", "3"]);
+  expect(result.issue.commentsComplete).toBe(true);
+  const block = result.issue.blocks.find((b) => b.id === "comment-1");
+  expect(block.markdown).toBe("First");
+  expect(block.comment.author).toBe("Reviewer 1");
+  expect(block.markdown).not.toContain("Reviewer");
+});
+test("browser import reports partial comments, merges the next page and rejects unrelated comments", () => {
+  const url = "https://planetart.atlassian.net/browse/WEB-128110";
+  const initial = importIssueJson(url, JSON.stringify({ ...issue, fields: { ...issue.fields, comment: {
+    startAt: 0, total: 2, comments: [comment("1", "2026-11-01T00:00:00Z", "First")],
+  } } }));
+  expect(initial.commentsComplete).toBe(false);
+  expect(initial.commentsNextStartAt).toBe(1);
+  const page = { startAt: 1, total: 2, comments: [comment("2", "2026-11-02T00:00:00Z", "Second")] };
+  const merged = importIssueJson(url, JSON.stringify(page), initial);
+  expect(merged.commentsComplete).toBe(true);
+  expect(merged.comments.length).toBe(2);
+  expect(merged.blocks.filter((b) => b.comment).length).toBe(2);
+  expect(() => importIssueJson(url, JSON.stringify(page), merged)).toThrow("已经导入");
+  const wrong = structuredClone(page);
+  wrong.comments[0].self = wrong.comments[0].self.replace("WEB-128110", "WEB-999");
+  expect(() => importIssueJson(url, JSON.stringify(wrong), initial)).toThrow("不属于当前票据");
+  expect(issueApiUrl(url)).toContain(",comment");
+});
+test("comment permission or pagination failures do not silently claim a complete ticket", async () => {
+  const url = "https://planetart.atlassian.net/browse/WEB-128110";
+  await expect(readIssue(url, async (input) => new Response(JSON.stringify(issue),
+    { status: input.includes("/comment?") ? 403 : 200, headers: { "content-type": "application/json" } }))).rejects.toThrow("评论读取权限");
+  await expect(readIssue(url, async (input) => new Response(JSON.stringify(input.includes("/comment?")
+    ? { startAt: 0, total: 1, comments: [] } : issue), { headers: { "content-type": "application/json" } }))).rejects.toThrow("分页内容发生变化");
 });
 test("browser import refuses mismatched issues and keeps only title and description", () => {
   const document = importIssueJson("https://planetart.atlassian.net/browse/WEB-128110", JSON.stringify(issue));

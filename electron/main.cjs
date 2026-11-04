@@ -1,13 +1,14 @@
 const path = require("node:path");
 const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut, net, safeStorage, shell } = require("electron");
 const { runTranslation, cliStatus, dispose } = require("./cli.cjs");
-const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
+const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, commentsApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
 const { JiraConnections } = require("./jira-connections.cjs");
 
 let mainWindow;
 let tray;
 let quitting = false;
 let activeTranslation;
+let currentJiraIssue = null;
 const shortcuts = {};
 app.setName("smartTrans");
 app.setPath("userData", path.join(app.getPath("appData"), "smart-translation"));
@@ -131,7 +132,11 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("jira-read", async (event, url) => {
     fromMainWindow(event);
-    try { return await readIssue(url, jiraFetch, jiraConnections.get(parseJiraUrl(url).origin)); }
+    try {
+      const response = await readIssue(url, jiraFetch, jiraConnections.get(parseJiraUrl(url).origin));
+      if (response.ok) currentJiraIssue = response.issue;
+      return response;
+    }
     catch (error) { return { ok: false, error: error.message }; }
   });
   ipcMain.handle("jira-connection-status", (event, url) => {
@@ -149,6 +154,7 @@ app.whenReady().then(() => {
       const response = await readIssue(payload.url, jiraFetch, connection);
       if (!response.ok) return response;
       jiraConnections.set(location.origin, connection, Boolean(payload.remember));
+      currentJiraIssue = response.issue;
       return response;
     } catch (error) { return { ok: false, error: error.message }; }
   });
@@ -164,8 +170,20 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("jira-import-clipboard", (event, input) => {
     fromMainWindow(event);
-    try { return { ok: true, issue: importIssueJson(input, clipboard.readText()) }; }
+    try {
+      currentJiraIssue = importIssueJson(input, clipboard.readText(), currentJiraIssue);
+      return { ok: true, issue: currentJiraIssue };
+    }
     catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-browser-comments", async (event, payload) => {
+    fromMainWindow(event);
+    try {
+      const location = parseJiraUrl(payload.url);
+      if (!currentJiraIssue || currentJiraIssue.url !== location.url || currentJiraIssue.commentsNextStartAt === null) throw new Error("请先导入对应票据，或当前评论已全部导入。");
+      await shell.openExternal(commentsApiUrl(payload.url, currentJiraIssue.commentsNextStartAt));
+      return { ok: true };
+    } catch (error) { return { ok: false, error: error.message }; }
   });
   ipcMain.handle("open-external", (event, input) => {
     fromMainWindow(event);

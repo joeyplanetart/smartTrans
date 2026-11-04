@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("smartTrans", {
   connectJira: (payload) => ipcRenderer.invoke("jira-connect", payload),
   disconnectJira: (url) => ipcRenderer.invoke("jira-disconnect", url),
   jiraBrowserData: (url) => ipcRenderer.invoke("jira-browser-data", url),
+  jiraBrowserComments: (url) => ipcRenderer.invoke("jira-browser-comments", { url }),
   importJiraClipboard: (url) => ipcRenderer.invoke("jira-import-clipboard", url),
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   status: () => ipcRenderer.invoke("cli-status"),

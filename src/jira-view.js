@@ -42,6 +42,10 @@
     $("#jiraCancelButton").classList.toggle("hidden", !operation);
     $("#jiraBrowserButton").disabled = busy();
     $("#jiraImportClipboardButton").disabled = busy();
+    $("#jiraMoreCommentsButton").classList.toggle("hidden", !issue || issue.commentsComplete);
+    $("#jiraMoreCommentsButton").disabled = busy();
+    $("#jiraMoreCommentsButton").textContent = issue?.comments?.length ? "导入更多评论 ↗" : "导入评论 ↗";
+    $("#jiraCopyButton").textContent = issue?.commentsComplete ? "复制完整译文" : "复制当前译文";
   }
   function acceptIssue(value) {
     issue = value;
@@ -55,23 +59,52 @@
     completed = false;
     $("#jiraRows").replaceChildren();
     $("#jiraKey").textContent = issue.key;
-    $("#jiraMeta").textContent = [issue.issueType, issue.status].filter(Boolean).join(" · ");
+    const loadedComments = issue.comments?.length || 0;
+    const commentCount = issue.commentsTotal == null ? "评论尚未导入" : "评论 " + loadedComments + "/" + issue.commentsTotal + " 条";
+    $("#jiraMeta").textContent = [issue.issueType, issue.status, commentCount].filter(Boolean).join(" · ");
     const warnings = [...issue.warnings];
-    if (issue.emptyDescription) warnings.push("该票据暂无描述，仅翻译标题。");
+    if (issue.emptyDescription) warnings.push("该票据暂无描述。");
+    if (!issue.commentsComplete) warnings.push("评论尚未完整导入。点击「导入更多评论」或「导入评论」，复制打开的数据页后再次导入。");
     $("#jiraWarning").textContent = warnings.join(" ");
     $("#jiraWarning").classList.toggle("hidden", !warnings.length);
+    let commentSection = false;
+    const date = (value) => {
+      if (!value) return "时间未提供";
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("zh-CN", { hour12: false });
+    };
     for (const block of issue.blocks) {
+      if (block.comment) {
+        if (!commentSection) {
+          const heading = document.createElement("div");
+          heading.className = "comment-divider";
+          heading.textContent = "评论 · 按发布时间排序";
+          $("#jiraRows").append(heading);
+          commentSection = true;
+        }
+        const meta = document.createElement("div");
+        meta.className = "comment-meta";
+        meta.textContent = block.comment.author + " · " + date(block.comment.created) +
+          (block.comment.updated && block.comment.updated !== block.comment.created ? " · 编辑于 " + date(block.comment.updated) : "");
+        $("#jiraRows").append(meta);
+      }
       const row = document.createElement("div");
       row.className = "comparison-row";
       const source = document.createElement("article");
       source.className = "markdown-body source-cell";
-      source.innerHTML = MarkdownView.render(block.markdown);
+      source.innerHTML = block.empty ? "该评论没有文字内容。" : MarkdownView.render(block.markdown);
       const target = document.createElement("article");
       target.className = "markdown-body target-cell pending-cell";
-      target.textContent = "等待翻译…";
+      target.textContent = block.empty ? "该评论没有文字内容。" : "等待翻译…";
       row.append(source, target);
       $("#jiraRows").append(row);
       cells.set(block.id, target);
+    }
+    if (issue.commentsComplete && !loadedComments) {
+      const empty = document.createElement("div");
+      empty.className = "comment-divider";
+      empty.textContent = "评论 · 当前账号没有可见评论";
+      $("#jiraRows").append(empty);
     }
     $("#jiraDocument").classList.remove("hidden");
     $("#jiraEmpty").classList.add("hidden");
@@ -85,7 +118,7 @@
     importing = true;
     controls();
     status("", true);
-    status("正在读取 Jira 标题和描述…");
+    status("正在读取 Jira 标题、描述和评论…");
     let loaded = false;
     try {
       const response = await window.smartTrans.readJira(url);
@@ -114,12 +147,14 @@
     if (!issue || busy() || window.TextTranslation.isBusy()) return;
     const target = $("#jiraTarget").value;
     let groups;
-    try { groups = JiraCore.batches(issue.blocks, issue.key.replace(/[^a-z0-9]/gi, "_")); }
+    try { groups = JiraCore.batches(issue.blocks.filter((block) => !block.empty), issue.key.replace(/[^a-z0-9]/gi, "_")); }
     catch (error) { status(error.message, true); return; }
     status("", true);
     translations.clear();
     completed = false;
-    for (const cell of cells.values()) {
+    for (const block of issue.blocks) {
+      const cell = cells.get(block.id);
+      if (block.empty) { translations.set(block.id, ""); continue; }
       cell.textContent = "等待翻译…";
       cell.classList.add("pending-cell");
       cell.dataset.state = "pending";
@@ -149,7 +184,9 @@
       }
       if (!task.cancelled) {
         completed = true;
-        status("翻译完成 · " + issue.blocks.length + " 段已对齐 · 总耗时 " + ((performance.now() - task.started) / 1000).toFixed(1) + " 秒");
+        status("当前内容翻译完成 · " + (issue.comments?.length || 0) + " 条评论 · " +
+          (issue.commentsComplete ? "" : "评论尚未完整导入 · ") +
+          "总耗时 " + ((performance.now() - task.started) / 1000).toFixed(1) + " 秒");
       }
     } catch (error) { status(error.message || "翻译失败，请重试。", true); status("翻译未完成，原文已保留。"); }
     finally {
@@ -242,6 +279,13 @@
     status("", true);
     status("已在默认浏览器打开票据数据。全选并复制 JSON 后，回到这里点击「导入剪贴板数据」。若被 JSON 插件折叠，可按 ⌘⌥U 查看源代码后复制。");
   });
+  $("#jiraMoreCommentsButton").addEventListener("click", async () => {
+    if (busy() || !issue) return;
+    const response = await window.smartTrans.jiraBrowserComments(issue.url);
+    if (!response.ok) { status(response.error, true); return; }
+    status("", true);
+    status("已打开下一页评论数据。请全选并复制 JSON，然后点击「导入剪贴板数据」。可用 ⌘⌥U 查看源代码后复制。");
+  });
   $("#jiraImportClipboardButton").addEventListener("click", async () => {
     if (busy()) return;
     const response = await window.smartTrans.importJiraClipboard($("#jiraUrl").value.trim());
@@ -253,9 +297,12 @@
   $("#jiraOpenButton").addEventListener("click", () => { if (issue) window.smartTrans.openExternal(issue.url); });
   $("#jiraCopyButton").addEventListener("click", async () => {
     if (!completed) return;
-    await window.smartTrans.copy(issue.blocks.map((block) => translations.get(block.id)).join("\n\n"));
+    await window.smartTrans.copy(issue.blocks.map((block) => {
+      const text = translations.get(block.id);
+      return block.comment ? "### 评论 · " + block.comment.author + " · " + block.comment.created + "\n\n" + text : text;
+    }).join("\n\n"));
     $("#jiraCopyButton").textContent = "已复制";
-    setTimeout(() => { $("#jiraCopyButton").textContent = "复制完整译文"; }, 1500);
+    setTimeout(() => { $("#jiraCopyButton").textContent = issue?.commentsComplete ? "复制完整译文" : "复制当前译文"; }, 1500);
   });
   $("#jiraWorkspace").addEventListener("click", (event) => {
     const link = event.target.closest("a[href]");
