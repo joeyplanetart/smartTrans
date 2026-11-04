@@ -1,5 +1,5 @@
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, clipboard, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, clipboard, Menu, screen } = require("electron");
 const { runTranslation, cliStatus } = require("./cli.cjs");
 
 let mainWindow;
@@ -7,11 +7,16 @@ app.setName("smartTrans");
 app.setPath("userData", path.join(app.getPath("appData"), "smart-translation"));
 
 function createWindow() {
+  const workArea = screen.getPrimaryDisplay().workArea;
+  const width = Math.round(workArea.width * 0.75);
+  const height = Math.round(workArea.height * 0.75);
   mainWindow = new BrowserWindow({
-    width: 1120,
-    height: 840,
-    minWidth: 650,
-    minHeight: 620,
+    width,
+    height,
+    x: workArea.x + Math.round((workArea.width - width) / 2),
+    y: workArea.y + Math.round((workArea.height - height) / 2),
+    minWidth: Math.min(650, width),
+    minHeight: Math.min(620, height),
     backgroundColor: "#f8f8f7",
     title: "Smart Translation",
     webPreferences: {
