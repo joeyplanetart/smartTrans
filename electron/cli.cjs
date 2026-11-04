@@ -5,6 +5,10 @@ const { spawn } = require("node:child_process");
 
 const MAX_SOURCE_LENGTH = 20000;
 const MAX_OUTPUT_LENGTH = 300000;
+const TRANSLATION_MODELS = {
+  codex: "gpt-6-luna",
+  cursor: "claude-haiku-5-5-low",
+};
 const TRANSLATION_SCHEMA = {
   type: "object",
   properties: { translation: { type: "string" } },
@@ -113,6 +117,7 @@ async function runTranslation(payload) {
       fs.writeFileSync(schemaPath, JSON.stringify(TRANSLATION_SCHEMA));
       output = await execute(binary, [
         "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral",
+        "--model", TRANSLATION_MODELS.codex, "--config", 'model_reasoning_effort="low"',
         "--ignore-rules", "--output-schema", schemaPath, "-"
       ], prompt, temporary);
       let parsed;
@@ -121,6 +126,7 @@ async function runTranslation(payload) {
     } else {
       output = await execute(binary, [
         "-p", "--mode", "ask", "--output-format", "text", "--workspace", temporary,
+        "--model", TRANSLATION_MODELS.cursor,
         "--trust", prompt
       ], "", temporary);
     }
