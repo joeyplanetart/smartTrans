@@ -3,6 +3,8 @@ const { app, BrowserWindow, ipcMain, clipboard, Menu } = require("electron");
 const { runTranslation, cliStatus } = require("./cli.cjs");
 
 let mainWindow;
+app.setName("smartTrans");
+app.setPath("userData", path.join(app.getPath("appData"), "smart-translation"));
 
 function createWindow() {
   mainWindow = new BrowserWindow({

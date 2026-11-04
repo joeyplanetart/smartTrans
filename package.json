@@ -5,9 +5,10 @@
   "description": "A focused Chinese-English translation editor powered by local AI CLIs.",
   "main": "electron/main.cjs",
   "scripts": {
+    "package:mac": "node scripts/package-mac.cjs",
     "start": "node scripts/ensure-electron.cjs && electron .",
     "dev": "node scripts/ensure-electron.cjs && electron .",
-    "check": "node --check electron/main.cjs && node --check electron/cli.cjs && node --check electron/preload.cjs && node --check src/renderer.js && node --check scripts/ensure-electron.cjs"
+    "check": "node --check electron/main.cjs && node --check electron/cli.cjs && node --check electron/preload.cjs && node --check src/renderer.js && node --check scripts/ensure-electron.cjs && node --check scripts/package-mac.cjs"
   },
   "devDependencies": {
     "electron": "^38.3.0"

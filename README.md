@@ -7,6 +7,18 @@ Bun + Electron 桌面翻译工具。只支持中文和英文，在一个内容�
     bun install
     bun run start
 
+## macOS 图标启动
+
+已安装的版本位于 `/Applications/smartTrans.app`，可从 Finder 的「应用程序」中双击打开，也可以将它拖到 Dock。
+
+重新打包：
+
+    bun run package:mac
+
+产物为 `dist/smartTrans.app`，自带 Electron 运行环境。将它复制到「应用程序」即可安装。该包使用本机临时签名，适合本机使用；对外分发需要 Apple Developer 签名和公证。翻译仍需要本机安装并登录 CLI。
+
+图标源文件为 `scripts/make-icon.swift`，应用图标为 `assets/smartTrans.icns`。
+
 需要预先安装并登录至少一个命令行工具：
 
 - Codex CLI：运行 `codex login`
