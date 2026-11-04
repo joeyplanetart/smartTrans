@@ -1,5 +1,5 @@
 const { test, expect } = require("bun:test");
-const { protectMarkdown } = require("../electron/markdown.cjs");
+const { protectMarkdown, protectJiraText } = require("../electron/markdown.cjs");
 const { History, detectLanguage } = require("../src/editor-core.js");
 
 test("translation changes prose while syntax, code, URLs, indentation and CRLF survive", () => {
@@ -22,6 +22,30 @@ test("stream preview never shows a partial protection token", () => {
   const value = protectMarkdown("## 标题");
   const token = value.masked.match(/⟦[^⟧]+⟧/)[0];
   for (let length = 1; length < token.length; length++) expect(value.restore("Title " + token.slice(0, length), true)).toBe("Title ");
+});
+test("Jira field names, email addresses, UUIDs and escaped table characters stay opaque", () => {
+  const source = "Keep User\\_ID and related_design_id for qa@example.com, id 12345678-abcd-1234-5678-123456789abc. A \\| B.";
+  const guarded = protectMarkdown(source);
+  expect(guarded.masked).not.toContain("User");
+  expect(guarded.masked).not.toContain("related_design_id");
+  expect(guarded.masked).not.toContain("qa@example.com");
+  expect(guarded.masked).not.toContain("12345678-abcd");
+  expect(guarded.restore(guarded.masked)).toBe(source);
+});
+test("Jira translation accepts added newlines and different emphasis without Markdown failures", () => {
+  const guarded = protectJiraText("## Title\n\n**Description** with User_ID and https://example.com.");
+  const translated = guarded.masked.replace("## Title", "标题").replace("**Description**", "描述") + "\n\n";
+  expect(guarded.restore(translated)).toContain("标题\n\n描述 with User_ID");
+  expect(guarded.restore(translated)).toContain("https://example.com");
+  const strict = protectMarkdown("## Title");
+  expect(() => strict.restore(strict.masked + "\n")).toThrow("Markdown");
+});
+test("Jira mode still protects code, row markers and technical values", () => {
+  const source = "`SMARTTRANS_JIRA_WEB_1_0`\n\nField User_ID\n\n```js\nconst a = 1;\n```";
+  const guarded = protectJiraText(source);
+  expect(guarded.masked).not.toContain("const a");
+  expect(guarded.restore(guarded.masked + "\n")).toBe(source + "\n");
+  expect(() => guarded.restore(guarded.masked.replace(/⟦[^⟧]+⟧/, ""))).toThrow("关键内容");
 });
 test("undo and redo restore replace and insertion as separate transactions", () => {
   const state = (value) => ({ value, start: value.length, end: value.length });

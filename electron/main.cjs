@@ -1,6 +1,8 @@
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut } = require("electron");
+const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut, net, safeStorage, shell } = require("electron");
 const { runTranslation, cliStatus, dispose } = require("./cli.cjs");
+const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
+const { JiraConnections } = require("./jira-connections.cjs");
 
 let mainWindow;
 let tray;
@@ -66,7 +68,13 @@ function clipboardTranslation() {
   const text = clipboard.readText();
   showWindow({ type: "clipboard", text });
 }
-function editorCommand(command) { mainWindow?.webContents.send("editor-command", command); }
+function editorCommand(command) {
+  const focused = BrowserWindow.getFocusedWindow();
+  if (focused && focused !== mainWindow) {
+    if (command === "undo") focused.webContents.undo();
+    else focused.webContents.redo();
+  } else mainWindow?.webContents.send("editor-command", command);
+}
 
 function fromMainWindow(event) {
   if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error("Invalid caller");
@@ -74,6 +82,8 @@ function fromMainWindow(event) {
 
 app.whenReady().then(() => {
   if (!primaryInstance) return;
+  const jiraConnections = new JiraConnections(app.getPath("userData"), safeStorage);
+  const jiraFetch = (input, init) => net.fetch(input, init);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(process.platform === "darwin" ? [{ label: app.name, submenu: [{ role: "about" }, { type: "separator" }, { role: "quit" }] }] : []),
     { label: "编辑", submenu: [
@@ -118,6 +128,49 @@ app.whenReady().then(() => {
     fromMainWindow(event);
     if (typeof text !== "string") throw new Error("Invalid text");
     clipboard.writeText(text);
+  });
+  ipcMain.handle("jira-read", async (event, url) => {
+    fromMainWindow(event);
+    try { return await readIssue(url, jiraFetch, jiraConnections.get(parseJiraUrl(url).origin)); }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-connection-status", (event, url) => {
+    fromMainWindow(event);
+    try {
+      const value = jiraConnections.get(parseJiraUrl(url).origin);
+      return { ok: true, connected: Boolean(value), email: value?.email || "", kind: value?.kind || "scoped", cloudId: value?.cloudId || "" };
+    } catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-connect", async (event, payload) => {
+    fromMainWindow(event);
+    try {
+      const location = parseJiraUrl(payload.url);
+      const connection = await resolveConnection(payload.url, payload, jiraFetch);
+      const response = await readIssue(payload.url, jiraFetch, connection);
+      if (!response.ok) return response;
+      jiraConnections.set(location.origin, connection, Boolean(payload.remember));
+      return response;
+    } catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-disconnect", (event, url) => {
+    fromMainWindow(event);
+    try { jiraConnections.remove(parseJiraUrl(url).origin); return { ok: true }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-browser-data", async (event, input) => {
+    fromMainWindow(event);
+    try { await shell.openExternal(issueApiUrl(input)); return { ok: true }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("jira-import-clipboard", (event, input) => {
+    fromMainWindow(event);
+    try { return { ok: true, issue: importIssueJson(input, clipboard.readText()) }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("open-external", (event, input) => {
+    fromMainWindow(event);
+    const url = safeUrl(input);
+    if (url) return shell.openExternal(url);
   });
   createWindow();
   tray = new Tray(nativeImage.createEmpty());

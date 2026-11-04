@@ -26,7 +26,11 @@
         <p>输入全文或选中片段，翻译后直接插入或替换。尽可能保留原有排版。</p>
       </div>
 
-      <section class="workspace" aria-label="翻译工作区">
+      <div class="mode-switch" role="group" aria-label="翻译模式">
+        <button class="mode-button active" id="textModeButton" type="button">文本翻译</button>
+        <button class="mode-button" id="jiraModeButton" type="button">Jira 对照</button>
+      </div>
+      <section class="workspace" id="textWorkspace" aria-label="翻译工作区">
         <div class="panel-heading">
           <div class="panel-title"><span class="panel-icon">文</span><div><h2>内容面板</h2><span>编辑、翻译、整理，一处完成</span></div></div>
           <span class="privacy"><span class="privacy-dot"></span> 自动保存在本机</span>
@@ -72,10 +76,55 @@
         <div class="error-message hidden" id="errorMessage" role="alert"></div>
       </section>
 
+      <section class="workspace jira-workspace hidden" id="jiraWorkspace" aria-label="Jira 左右对照翻译">
+        <div class="jira-import">
+          <label for="jiraUrl">Jira 链接</label>
+          <div class="jira-import-controls">
+            <input id="jiraUrl" type="url" placeholder="https://planetart.atlassian.net/browse/WEB-128110" spellcheck="false" aria-label="Jira 票据链接">
+            <button class="secondary-button" id="jiraLoginButton" type="button">连接 Jira</button>
+            <button class="primary-button" id="jiraLoadButton" type="button">读取并翻译</button>
+          </div>
+          <div class="jira-browser-tools"><p class="jira-hint">读取标题和描述，左侧原文、右侧译文，段落对齐并同步滚动。</p><button class="text-button" id="jiraBrowserButton" type="button">浏览器导入 ↗</button><button class="text-button" id="jiraImportClipboardButton" type="button">导入剪贴板数据</button></div>
+        </div>
+        <div class="jira-state hidden" id="jiraState" role="status"></div>
+        <div class="jira-error hidden" id="jiraError" role="alert"></div>
+        <div class="jira-document hidden" id="jiraDocument">
+          <div class="jira-document-toolbar">
+            <div class="jira-identity"><strong id="jiraKey"></strong><span id="jiraMeta"></span><button class="text-button" id="jiraOpenButton" type="button">打开原页 ↗</button></div>
+            <div class="jira-actions">
+              <select id="jiraTarget" aria-label="Jira 译文语言"><option value="zh">译为中文</option><option value="en">译为英语</option></select>
+              <button class="secondary-button" id="jiraTranslateButton" type="button">重新翻译</button>
+              <button class="secondary-button hidden" id="jiraCancelButton" type="button">取消翻译</button>
+              <button class="secondary-button" id="jiraCopyButton" type="button" disabled>复制完整译文</button>
+            </div>
+          </div>
+          <p class="jira-warning hidden" id="jiraWarning"></p>
+          <div class="jira-comparison" id="jiraComparison">
+            <div class="comparison-head"><span>原文 · 标题与描述</span><span id="jiraTranslationHeading">中文译文</span></div>
+            <div id="jiraRows"></div>
+          </div>
+        </div>
+        <div class="jira-empty" id="jiraEmpty"><span>↗</span><h2>从一张 Jira 票据开始</h2><p>粘贴链接，连接 Jira 后直接读取、翻译。<br>也可以用已登录的浏览器复制票据数据后导入。</p></div>
+      </section>
+
       <div class="footer-tips"><span><span class="tip-icon">↗</span> 支持选中段落翻译</span><span><span class="tip-icon">#</span> 尽量保留 Markdown</span><span><span class="tip-icon">⌘</span> 快捷键操作</span></div>
     </main>
   </div>
 
+  <dialog id="jiraConnectionDialog" class="modal jira-connection-modal">
+    <form id="jiraConnectionForm" class="modal-content">
+      <div class="modal-head"><h2>连接 Jira</h2><button id="jiraConnectionClose" type="button" aria-label="关闭 Jira 连接设置">×</button></div>
+      <p>使用 Atlassian 邮箱与 API Token 读取票据。浏览器登录状态不会自动共享给本应用。</p>
+      <label for="jiraEmail">Atlassian 邮箱</label><input id="jiraEmail" type="email" required autocomplete="username">
+      <label for="jiraToken">API Token</label><input id="jiraToken" type="password" required autocomplete="off" placeholder="仅用于连接 Atlassian，不发送给翻译模型">
+      <label for="jiraTokenKind">Token 类型</label><select id="jiraTokenKind"><option value="scoped">带权限范围的 Token（Scoped）</option><option value="classic">经典 Token（无权限范围）</option></select>
+      <details><summary>Cloud ID（通常会自动读取）</summary><input id="jiraCloudId" type="text" aria-label="Jira Cloud ID" placeholder="自动读取失败时，可在这里填写"></details>
+      <label class="remember-connection"><input id="jiraRemember" type="checkbox"> 在本机加密保存连接</label>
+      <p class="jira-connection-status" id="jiraConnectionStatus" role="status">默认仅在本次运行中保留 Token。</p>
+      <div class="connection-actions"><button class="text-button" id="jiraCreateToken" type="button">在浏览器创建 Token ↗</button><button class="text-button" id="jiraDisconnect" type="button">移除连接</button></div>
+      <button class="primary-button modal-save" id="jiraConnectSubmit" type="submit">连接并读取</button>
+    </form>
+  </dialog>
   <dialog id="settingsDialog" class="modal">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2>翻译设置</h2><button type="submit" aria-label="关闭">×</button></div>
@@ -100,6 +149,9 @@
     </form>
   </dialog>
   <script src="./editor-core.js"></script>
+  <script src="./vendor/markdown.js"></script>
+  <script src="./jira-core.js"></script>
   <script src="./renderer.js"></script>
+  <script src="./jira-view.js"></script>
 </body>
 </html>

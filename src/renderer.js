@@ -43,6 +43,7 @@ function changeDocument(value, caret, label) {
   editor.focus();
 }
 function historyCommand(command) {
+  if (window.JiraView?.isActive()) { window.JiraView.editorCommand(command); return; }
   if (settingsDialog.open || $("#shortcutsDialog").open) return;
   cancelTranslation();
   const restored = command === "undo" ? history.undo() : history.redo();
@@ -119,6 +120,7 @@ function snapshotSource(override) {
 }
 
 async function translate(override) {
+  if (window.JiraView?.isActive()) { window.JiraView.translate(); return; }
   if (currentRequest) return;
   const snapshot = snapshotSource(override);
   if (!snapshot.text.trim()) {
@@ -190,6 +192,7 @@ async function translate(override) {
 }
 
 function applyTranslation(mode) {
+  if (window.JiraView?.isActive()) return;
   if (!activeResult) return;
   const item = activeResult;
   if (editor.value !== item.originalDocument) {
@@ -258,6 +261,8 @@ window.smartTrans.onProgress((event) => {
 window.smartTrans.onEditorCommand(historyCommand);
 window.smartTrans.onDesktopAction((action) => {
   if (action.type === "clipboard") {
+    if (window.JiraView?.isBusy()) { window.JiraView.notifyBusy(); return; }
+    if (window.JiraView?.isActive()) window.JiraView.close();
     if (currentRequest) { showError("请先取消或等待当前翻译完成，再翻译剪贴板。"); return; }
     if (!action.text?.trim()) { showError("剪贴板没有可翻译的文字。"); return; }
     if (action.text.length > 20000) { showError("剪贴板内容超过 20,000 字符。"); return; }
@@ -317,6 +322,12 @@ window.smartTrans.desktopStatus().then((status) => {
     "；剪贴板翻译 ⌘⇧Y：" + (status.clipboard ? "已启用" : "快捷键被占用") + "。关闭窗口后可从菜单栏「译」再次打开。";
 });
 document.addEventListener("keydown", (event) => {
+  if ($("#jiraConnectionDialog")?.open) return;
+  if (window.JiraView?.isActive()) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); window.JiraView.translate(); }
+    if (event.key === "Escape") window.JiraView.cancel();
+    return;
+  }
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z" && !settingsDialog.open && !$("#shortcutsDialog").open) {
     event.preventDefault();
     historyCommand(event.shiftKey ? "redo" : "undo");
@@ -337,3 +348,4 @@ document.addEventListener("keydown", (event) => {
 setTarget(detectTarget(editor.value));
 updateEditorMeta();
 updateProviderStatus();
+window.TextTranslation = { isBusy: () => Boolean(currentRequest) };
