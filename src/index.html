@@ -34,7 +34,7 @@
 
         <div class="editor-toolbar">
           <div class="language-control" role="group" aria-label="翻译语言">
-            <span class="source-label">自动识别</span>
+            <span class="source-label" id="sourceLabel">自动识别</span>
             <span class="arrow" aria-hidden="true">→</span>
             <button class="target-select" id="targetButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="targetLabel">英语</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5"/></svg></button>
             <div class="target-menu hidden" id="targetMenu" role="listbox" aria-label="目标语言">
@@ -42,7 +42,7 @@
               <button type="button" role="option" data-target="zh">中文 <span>简体中文</span></button>
             </div>
           </div>
-          <span class="selection-indicator" id="selectionIndicator">翻译全部内容</span>
+          <div class="editor-tools"><button class="secondary-button hidden" id="undoAction" type="button">撤销替换</button><span class="selection-indicator" id="selectionIndicator">翻译全部内容</span></div>
         </div>
 
         <div class="editor-wrap">
@@ -52,8 +52,10 @@
 
         <div class="action-bar">
           <div class="action-hint"><span class="sparkle">✦</span><span id="actionHint">选择目标语言，开始翻译</span></div>
+          <button class="secondary-button hidden" id="cancelButton" type="button">取消翻译</button>
           <button class="translate-button" id="translateButton" type="button"><span>开始翻译</span><span class="shortcut-key">⌘ ↵</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-5-5 5 5-5 5"/></svg></button>
         </div>
+        <p class="timing-details hidden" id="timingDetails" aria-live="polite"></p>
 
         <div class="result hidden" id="result" aria-live="polite">
           <div class="result-heading"><div><span class="result-sparkle">✦</span><span>翻译结果</span><span class="result-badge" id="resultBadge">英语</span></div><button class="close-result" id="closeResult" type="button" aria-label="关闭结果">×</button></div>
@@ -81,6 +83,7 @@
       <label for="provider">AI 命令行工具</label>
       <select id="provider"><option value="codex">Codex CLI · GPT-6 Luna（低推理）</option><option value="cursor">Cursor CLI · Claude Haiku 5.5（不思考）</option></select>
       <p class="setting-footnote" id="providerStatus">正在检查工具状态…</p>
+      <p class="setting-footnote" id="desktopStatus"></p>
       <button class="primary-button modal-save" id="saveSettings" type="submit">完成</button>
     </form>
   </dialog>
@@ -91,8 +94,12 @@
       <div class="shortcut-row"><span>替换原文</span><kbd>⌘ / Ctrl + Shift + Enter</kbd></div>
       <div class="shortcut-row"><span>插入译文</span><kbd>Alt + Enter</kbd></div>
       <div class="shortcut-row"><span>关闭结果</span><kbd>Esc</kbd></div>
+      <div class="shortcut-row"><span>撤销 / 重做</span><kbd>⌘Z / ⌘⇧Z</kbd></div>
+      <div class="shortcut-row"><span>全局唤起窗口</span><kbd>⌘ / Ctrl + Shift + T</kbd></div>
+      <div class="shortcut-row"><span>全局翻译剪贴板</span><kbd>⌘ / Ctrl + Shift + Y</kbd></div>
     </form>
   </dialog>
+  <script src="./editor-core.js"></script>
   <script src="./renderer.js"></script>
 </body>
 </html>
