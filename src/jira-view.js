@@ -315,6 +315,7 @@
   window.JiraView = {
     isActive: () => active, isBusy: () => busy() || $("#jiraConnectionDialog").open, translate, cancel,
     close: () => mode(false),
+    open: () => mode(true),
     notifyBusy: () => status("请先取消或等待 Jira 翻译完成。", true),
     editorCommand(command) {
       if (document.activeElement?.matches("input,textarea")) document.execCommand(command);

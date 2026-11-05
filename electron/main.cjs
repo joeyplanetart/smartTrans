@@ -11,6 +11,9 @@ let tray;
 let quitting = false;
 let activeTranslation;
 let currentJiraIssue = null;
+let miniMode = false;
+let fullWindowBounds = null;
+let fullWindowMaximized = false;
 const shortcuts = {};
 app.setName("smartTrans");
 app.setPath("userData", path.join(app.getPath("appData"), "smart-translation"));
@@ -101,6 +104,33 @@ app.whenReady().then(() => {
     ] },
     { label: "窗口", submenu: [{ role: "minimize" }, { role: "close" }] },
   ]));
+  ipcMain.handle("window-mini", (event, enabled) => {
+    fromMainWindow(event);
+    if (typeof enabled !== "boolean") throw new Error("Invalid window mode");
+    if (enabled === miniMode) return miniMode;
+    const area = screen.getDisplayMatching(mainWindow.getBounds()).workArea;
+    if (enabled) {
+      fullWindowMaximized = mainWindow.isMaximized();
+      fullWindowBounds = mainWindow.getNormalBounds();
+      if (fullWindowMaximized) mainWindow.unmaximize();
+      mainWindow.setMinimumSize(Math.min(380, area.width), Math.min(420, area.height));
+      const width = Math.min(460, area.width), height = Math.min(640, area.height);
+      const x = Math.max(area.x, Math.min(fullWindowBounds.x + fullWindowBounds.width - width, area.x + area.width - width));
+      const y = Math.max(area.y, Math.min(fullWindowBounds.y, area.y + area.height - height));
+      mainWindow.setBounds({ x, y, width, height });
+    } else {
+      const original = fullWindowBounds || mainWindow.getBounds();
+      const work = screen.getDisplayMatching(original).workArea;
+      const width = Math.min(original.width, work.width), height = Math.min(original.height, work.height);
+      mainWindow.setMinimumSize(Math.min(650, work.width), Math.min(620, work.height));
+      mainWindow.setBounds({ width, height,
+        x: Math.max(work.x, Math.min(original.x, work.x + work.width - width)),
+        y: Math.max(work.y, Math.min(original.y, work.y + work.height - height)) });
+      if (fullWindowMaximized) mainWindow.maximize();
+    }
+    miniMode = enabled;
+    return miniMode;
+  });
   ipcMain.handle("speech-start", async (event, payload) => {
     fromMainWindow(event);
     try { return await speech.speak(payload, state => { if (!event.sender.isDestroyed()) event.sender.send("speech-state", state); }); }

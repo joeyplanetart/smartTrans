@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("smartTrans", {
+  setMini: enabled => ipcRenderer.invoke("window-mini", enabled),
   speak: payload => ipcRenderer.invoke("speech-start", payload),
   stopSpeech: () => ipcRenderer.invoke("speech-stop"),
   onSpeechState: callback => ipcRenderer.on("speech-state", (_event, state) => callback(state)),
