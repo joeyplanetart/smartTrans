@@ -24,7 +24,6 @@
     } catch { if (id === request) status.textContent = '系统朗读不可用，请重试。'; }
   }
   byId('speakSelection').addEventListener('click', () => speak(selection, 'read'));
-  byId('spellSelection').addEventListener('click', () => speak(selection, 'spell'));
   stop.addEventListener('click', () => window.smartTrans.stopSpeech());
   window.smartTrans.onSpeechAction(action => speak(action.text, action.mode));
   window.smartTrans.onSpeechState(state => {

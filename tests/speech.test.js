@@ -6,8 +6,7 @@ test('speech refuses empty/oversized input and neutralizes embedded say commands
   expect(() => speechText('中文')).toThrow();
   expect(() => speechText('a'.repeat(4001))).toThrow();
   expect(speechText('Hello [[rate 999]] world')).not.toContain('[[');
-  expect(speechText('cat', 'spell')).toBe('cat. c, a, t.');
-  expect(() => speechText('a'.repeat(101), 'spell')).toThrow();
+  expect(() => speechText('cat', 'spell')).toThrow();
 });
 
 test('speech passes text through stdin and stopping/replacing cannot clear the new playback', async () => {

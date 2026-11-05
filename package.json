@@ -1,6 +1,6 @@
 {
   "name": "smart-translation",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "A focused Chinese-English translation editor powered by local AI CLIs.",
   "main": "electron/main.cjs",
@@ -10,7 +10,7 @@
     "package:mac": "bun run build:renderer && node scripts/package-mac.cjs",
     "start": "bun run build:renderer && node scripts/ensure-electron.cjs && electron .",
     "dev": "bun run build:renderer && node scripts/ensure-electron.cjs && electron .",
-    "check": "bun run build:renderer && node --check electron/speech.cjs && node --check src/speech-view.js && node --check electron/main.cjs && node --check electron/cli.cjs && node --check electron/markdown.cjs && node --check electron/codex-server.cjs && node --check electron/preload.cjs && node --check electron/jira.cjs && node --check electron/jira-connections.cjs && node --check src/renderer.js && node --check src/editor-core.js && node --check src/jira-core.js && node --check src/jira-view.js && node --check scripts/ensure-electron.cjs && node --check scripts/package-mac.cjs"
+    "check": "bun run build:renderer && node --check electron/speech.cjs && node --check src/speech-view.js && node --check src/updates-view.js && node --check electron/main.cjs && node --check electron/cli.cjs && node --check electron/markdown.cjs && node --check electron/codex-server.cjs && node --check electron/preload.cjs && node --check electron/jira.cjs && node --check electron/jira-connections.cjs && node --check src/renderer.js && node --check src/editor-core.js && node --check src/jira-core.js && node --check src/jira-view.js && node --check scripts/ensure-electron.cjs && node --check scripts/package-mac.cjs"
   },
   "devDependencies": {
     "dompurify": "^3.4.17",

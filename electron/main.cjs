@@ -45,9 +45,7 @@ function createWindow() {
     if (!selection) return;
     const items = [];
     if (params.isEditable) items.push({ label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") });
-    if (/[a-z]/i.test(selection)) items.push(
-      { label: "朗读英文", click: () => mainWindow?.webContents.send("speech-action", { text: selection, mode: "read" }) },
-      { label: "逐字母拼读", click: () => mainWindow?.webContents.send("speech-action", { text: selection, mode: "spell" }) });
+    if (/[a-z]/i.test(selection)) items.push({ label: "朗读英文", click: () => mainWindow?.webContents.send("speech-action", { text: selection }) });
     items.push({ type: "separator" }, { role: "copy", label: "复制" }, { role: "selectAll", label: "全选" });
     Menu.buildFromTemplate(items).popup({ window: mainWindow });
   });

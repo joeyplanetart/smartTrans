@@ -14,6 +14,7 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true"><span>译</span></span><span>smart<span class="brand-strong">Trans</span></span></div>
       <div class="top-actions">
         <span class="top-note">中英双向 · 保留格式</span>
+        <button class="settings-button" id="updatesButton" type="button">功能与更新</button>
         <button class="icon-button" id="shortcutsButton" type="button" aria-label="查看快捷键" title="快捷键">⌘</button>
         <button class="settings-button" id="settingsButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4a8 8 0 0 0-.1-1.2l1.7-1.3-1.7-3-2 .8a8 8 0 0 0-2.1-1.2L15.5 4h-3l-.4 2.1a8 8 0 0 0-2.1 1.2l-2-.8-1.7 3L8 10.8a8 8 0 0 0 0 2.4l-1.7 1.3 1.7 3 2-.8a8 8 0 0 0 2.1 1.2l.4 2.1h3l.4-2.1a8 8 0 0 0 2.1-1.2l2 .8 1.7-3-1.7-1.3A8 8 0 0 0 20 12Z"/></svg><span>设置</span></button>
       </div>
@@ -33,14 +34,13 @@
       <div class="speech-toolbar" role="group" aria-label="英语发音">
         <span>英语发音</span>
         <button class="secondary-button" id="speakSelection" type="button" title="选中英文后朗读 · ⌘⇧S">朗读选中内容</button>
-        <button class="secondary-button" id="spellSelection" type="button">逐字母拼读</button>
         <label>语速 <select id="speechRate" aria-label="朗读语速"><option value="110">慢速</option><option value="170" selected>正常</option><option value="210">快速</option></select></label>
         <button class="text-button" id="stopSpeech" type="button" disabled>停止</button>
         <span id="speechStatus" role="status">选中原文或译文中的英文即可听发音</span>
       </div>
       <section class="workspace" id="textWorkspace" aria-label="翻译工作区">
         <div class="panel-heading">
-          <div class="panel-title"><span class="panel-icon">文</span><div><h2>内容面板</h2><span>编辑、翻译、整理，一处完成</span></div></div>
+          <div class="panel-title"><span class="panel-icon" aria-hidden="true">文</span><span class="panel-description">编辑、翻译、整理，一处完成</span></div>
           <span class="privacy"><span class="privacy-dot"></span> 自动保存在本机</span>
         </div>
 
@@ -145,6 +145,26 @@
       <button class="primary-button modal-save" id="saveSettings" type="submit">完成</button>
     </form>
   </dialog>
+  <dialog id="updatesDialog" class="modal updates-modal" aria-labelledby="updatesTitle">
+    <form method="dialog" class="modal-content">
+      <div class="modal-head"><h2 id="updatesTitle">功能与更新</h2><button type="submit" aria-label="关闭功能与更新">×</button></div>
+      <p class="version-label">smartTrans · v0.3.3</p>
+      <h3>功能清单</h3>
+      <ul class="feature-list">
+        <li><strong>中英双向翻译</strong><span>全文或选区翻译，保留原意与简单 Markdown 格式。</span></li>
+        <li><strong>直接整理译文</strong><span>复制、插入、替换，支持撤销与重做。</span></li>
+        <li><strong>Jira 左右对照</strong><span>读取标题、描述与可见评论，保留作者和时间，配对滚动。</span></li>
+        <li><strong>英文朗读</strong><span>选中原文或译文听发音，支持语速切换、右键与快捷键。</span></li>
+        <li><strong>桌面快捷操作</strong><span>菜单栏常驻、全局唤起、剪贴板翻译与本机内容保存。</span></li>
+      </ul>
+      <h3>版本更新记录</h3>
+      <section class="release-entry"><h4>v0.3.3 <span>当前版本</span></h4><ul><li>简化编辑区顶部文案，调整垂直居中与高度。</li><li>移除逐字母拼读，保留英文朗读与语速控制。</li><li>新增功能清单与版本更新记录。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.2</h4><ul><li>新增 macOS 英文朗读、语速选择与停止播放。</li><li>支持编辑区、译文和 Jira 内容选区朗读。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.1</h4><ul><li>Jira 评论加入翻译与左右对照。</li><li>支持评论分页，显示作者、发布时间与编辑时间。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.0</h4><ul><li>支持 Jira 标题、描述读取与左右对照翻译。</li><li>支持 API Token 连接与浏览器数据导入。</li><li>Jira 翻译放宽 Markdown 校验，保留链接、代码与段落对齐。</li></ul></section>
+      <p>翻译需要已登录的 Codex CLI 或 Cursor CLI；英文朗读使用 macOS 系统语音。</p>
+    </form>
+  </dialog>
   <dialog id="shortcutsDialog" class="modal">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2>快捷键</h2><button type="submit" aria-label="关闭">×</button></div>
@@ -164,5 +184,6 @@
   <script src="./renderer.js"></script>
   <script src="./jira-view.js"></script>
   <script src="./speech-view.js"></script>
+  <script src="./updates-view.js"></script>
 </body>
 </html>

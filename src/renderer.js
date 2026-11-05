@@ -322,7 +322,7 @@ window.smartTrans.desktopStatus().then((status) => {
     "；剪贴板翻译 ⌘⇧Y：" + (status.clipboard ? "已启用" : "快捷键被占用") + "。关闭窗口后可从菜单栏「译」再次打开。";
 });
 document.addEventListener("keydown", (event) => {
-  if ($("#jiraConnectionDialog")?.open) return;
+  if (document.querySelector("dialog[open]")) return;
   if (window.JiraView?.isActive()) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); window.JiraView.translate(); }
     if (event.key === "Escape") window.JiraView.cancel();

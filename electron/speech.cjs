@@ -5,11 +5,6 @@ function speechText(text, mode = 'read') {
   if (!/[a-z]/i.test(text)) throw new Error('请先选中英文单词或短句。');
   // say supports embedded commands; never interpret commands supplied by content.
   const clean = text.replace(/\[\[/g, '').replace(/\]\]/g, '').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, ' ').trim();
-  if (mode === 'spell') {
-    const words = clean.match(/[a-z]+(?:['’][a-z]+)*/gi) || [];
-    if (words.join('').length > 100) throw new Error('逐字母拼读适合短词，请选择 100 个字母以内的内容。');
-    return words.map(word => word + '. ' + [...word].join(', ') + '.').join(' ');
-  }
   if (mode !== 'read') throw new Error('无效的朗读模式。');
   return clean;
 }
