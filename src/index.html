@@ -45,6 +45,8 @@
           <span class="privacy"><span class="privacy-dot"></span> 自动保存在本机</span>
         </div>
 
+        <div class="text-columns">
+        <div class="source-pane">
         <div class="editor-toolbar">
           <div class="language-control" role="group" aria-label="翻译语言">
             <span class="source-label" id="sourceLabel">自动识别</span>
@@ -70,6 +72,7 @@
         </div>
         <p class="timing-details hidden" id="timingDetails" aria-live="polite"></p>
 
+        </div>
         <div class="result hidden" id="result" aria-live="polite">
           <div class="result-heading"><div><span class="result-sparkle">✦</span><span>翻译结果</span><span class="result-badge" id="resultBadge">英语</span></div><button class="close-result" id="closeResult" type="button" aria-label="关闭结果">×</button></div>
           <pre class="translation-text" id="translationText"></pre>
@@ -81,6 +84,8 @@
               <button class="primary-button" id="replaceButton" type="button">替换原文</button>
             </div>
           </div>
+        </div>
+        <div class="result-placeholder"><span>翻译结果</span><p>译文将在这里显示</p></div>
         </div>
         <div class="error-message hidden" id="errorMessage" role="alert"></div>
       </section>
@@ -142,6 +147,9 @@
       <label for="provider">AI 命令行工具</label>
       <select id="provider"><option value="codex">Codex CLI · GPT-6 Luna（低推理）</option><option value="cursor">Cursor CLI · Claude Haiku 5.5（不思考）</option></select>
       <p class="setting-footnote" id="providerStatus">正在检查工具状态…</p>
+      <label for="textLayout">原文与译文布局</label>
+      <select id="textLayout"><option value="stacked">上下布局（默认）</option><option value="side-by-side">左右布局</option></select>
+      <p class="setting-footnote">用于文本翻译，即时生效并保存在本机。Mini 模式和窄窗口自动使用上下布局。</p>
       <p class="setting-footnote" id="desktopStatus"></p>
       <button class="primary-button modal-save" id="saveSettings" type="submit">完成</button>
     </form>
@@ -149,7 +157,7 @@
   <dialog id="updatesDialog" class="modal updates-modal" aria-labelledby="updatesTitle">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2 id="updatesTitle">功能与更新</h2><button type="submit" aria-label="关闭功能与更新">×</button></div>
-      <p class="version-label">smartTrans · v0.3.5</p>
+      <p class="version-label">smartTrans · v0.3.6</p>
       <h3>功能清单</h3>
       <ul class="feature-list">
         <li><strong>中英双向翻译</strong><span>全文或选区翻译，保留原意与简单 Markdown 格式。</span></li>
@@ -159,7 +167,8 @@
         <li><strong>桌面快捷操作</strong><span>菜单栏常驻、全局唤起、剪贴板翻译与本机内容保存。</span></li>
       </ul>
       <h3>版本更新记录</h3>
-      <section class="release-entry"><h4>v0.3.5 <span>当前版本</span></h4><ul><li>顶部说明移至品牌旁，与右侧功能菜单分开。</li><li>Mini 模式新增置顶开关，切换其他应用时保持可见。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.6 <span>当前版本</span></h4><ul><li>设置中新增文本翻译的上下 / 左右布局切换，默认上下布局。</li><li>记住布局偏好，Mini 模式与窄窗口自动适配上下布局。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.5</h4><ul><li>顶部说明移至品牌旁，与右侧功能菜单分开。</li><li>Mini 模式新增置顶开关，切换其他应用时保持可见。</li></ul></section>
       <section class="release-entry"><h4>v0.3.4</h4><ul><li>新增 Mini 窗口，聚焦输入、翻译结果与英文朗读。</li><li>支持快捷键切换，返回时恢复完整窗口大小和工作模式。</li></ul></section>
       <section class="release-entry"><h4>v0.3.3</h4><ul><li>简化编辑区顶部文案，调整垂直居中与高度。</li><li>移除逐字母拼读，保留英文朗读与语速控制。</li><li>新增功能清单与版本更新记录。</li></ul></section>
       <section class="release-entry"><h4>v0.3.2</h4><ul><li>新增 macOS 英文朗读、语速选择与停止播放。</li><li>支持编辑区、译文和 Jira 内容选区朗读。</li></ul></section>
@@ -190,5 +199,6 @@
   <script src="./speech-view.js"></script>
   <script src="./updates-view.js"></script>
   <script src="./mini-view.js"></script>
+  <script src="./layout-view.js"></script>
 </body>
 </html>
