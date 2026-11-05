@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("smartTrans", {
+  speak: payload => ipcRenderer.invoke("speech-start", payload),
+  stopSpeech: () => ipcRenderer.invoke("speech-stop"),
+  onSpeechState: callback => ipcRenderer.on("speech-state", (_event, state) => callback(state)),
+  onSpeechAction: callback => ipcRenderer.on("speech-action", (_event, action) => callback(action)),
   translate: (payload) => ipcRenderer.invoke("translate", payload),
   cancel: (requestId) => ipcRenderer.invoke("cancel-translation", requestId),
   onProgress: (callback) => ipcRenderer.on("translation-progress", (_event, payload) => callback(payload)),

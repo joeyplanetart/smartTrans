@@ -4,6 +4,8 @@ const { runTranslation, cliStatus, dispose } = require("./cli.cjs");
 const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, commentsApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
 const { JiraConnections } = require("./jira-connections.cjs");
 
+const { Speech } = require("./speech.cjs");
+const speech = new Speech();
 let mainWindow;
 let tray;
 let quitting = false;
@@ -39,16 +41,18 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event) => event.preventDefault());
   mainWindow.webContents.on("context-menu", (_event, params) => {
-    if (!params.isEditable || !(params.selectionText || "").trim()) return;
-    Menu.buildFromTemplate([
-      { label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") },
-      { type: "separator" },
-      { role: "copy", label: "复制" },
-      { role: "selectAll", label: "全选" },
-    ]).popup({ window: mainWindow });
+    const selection = (params.selectionText || "").trim();
+    if (!selection) return;
+    const items = [];
+    if (params.isEditable) items.push({ label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") });
+    if (/[a-z]/i.test(selection)) items.push(
+      { label: "朗读英文", click: () => mainWindow?.webContents.send("speech-action", { text: selection, mode: "read" }) },
+      { label: "逐字母拼读", click: () => mainWindow?.webContents.send("speech-action", { text: selection, mode: "spell" }) });
+    items.push({ type: "separator" }, { role: "copy", label: "复制" }, { role: "selectAll", label: "全选" });
+    Menu.buildFromTemplate(items).popup({ window: mainWindow });
   });
   mainWindow.on("close", (event) => {
-    if (!quitting) { event.preventDefault(); mainWindow.hide(); }
+    if (!quitting) { event.preventDefault(); speech.stop(); mainWindow.hide(); mainWindow.webContents.send("speech-state", { speaking: false }); }
   });
   mainWindow.on("closed", () => { mainWindow = null; });
 }
@@ -99,6 +103,14 @@ app.whenReady().then(() => {
     ] },
     { label: "窗口", submenu: [{ role: "minimize" }, { role: "close" }] },
   ]));
+  ipcMain.handle("speech-start", async (event, payload) => {
+    fromMainWindow(event);
+    try { return await speech.speak(payload, state => { if (!event.sender.isDestroyed()) event.sender.send("speech-state", state); }); }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("speech-stop", event => {
+    fromMainWindow(event); speech.stop(); event.sender.send("speech-state", { speaking: false });
+  });
   ipcMain.handle("translate", async (event, payload) => {
     fromMainWindow(event);
     if (activeTranslation) return { ok: false, error: "上一条翻译仍在结束，请稍后重试。" };
@@ -207,6 +219,7 @@ app.whenReady().then(() => {
 app.on("second-instance", () => showWindow());
 app.on("before-quit", () => {
   quitting = true;
+  speech.stop();
   activeTranslation?.controller.abort();
   globalShortcut.unregisterAll();
   dispose();

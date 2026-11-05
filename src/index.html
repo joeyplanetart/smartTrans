@@ -30,6 +30,14 @@
         <button class="mode-button active" id="textModeButton" type="button">文本翻译</button>
         <button class="mode-button" id="jiraModeButton" type="button">Jira 对照</button>
       </div>
+      <div class="speech-toolbar" role="group" aria-label="英语发音">
+        <span>英语发音</span>
+        <button class="secondary-button" id="speakSelection" type="button" title="选中英文后朗读 · ⌘⇧S">朗读选中内容</button>
+        <button class="secondary-button" id="spellSelection" type="button">逐字母拼读</button>
+        <label>语速 <select id="speechRate" aria-label="朗读语速"><option value="110">慢速</option><option value="170" selected>正常</option><option value="210">快速</option></select></label>
+        <button class="text-button" id="stopSpeech" type="button" disabled>停止</button>
+        <span id="speechStatus" role="status">选中原文或译文中的英文即可听发音</span>
+      </div>
       <section class="workspace" id="textWorkspace" aria-label="翻译工作区">
         <div class="panel-heading">
           <div class="panel-title"><span class="panel-icon">文</span><div><h2>内容面板</h2><span>编辑、翻译、整理，一处完成</span></div></div>
@@ -140,6 +148,7 @@
   <dialog id="shortcutsDialog" class="modal">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2>快捷键</h2><button type="submit" aria-label="关闭">×</button></div>
+      <div class="shortcut-row"><span>朗读选中英文 / 停止</span><kbd>⌘ / Ctrl + Shift + S / Esc</kbd></div>
       <div class="shortcut-row"><span>开始翻译</span><kbd>⌘ / Ctrl + Enter</kbd></div>
       <div class="shortcut-row"><span>替换原文</span><kbd>⌘ / Ctrl + Shift + Enter</kbd></div>
       <div class="shortcut-row"><span>插入译文</span><kbd>Alt + Enter</kbd></div>
@@ -154,5 +163,6 @@
   <script src="./jira-core.js"></script>
   <script src="./renderer.js"></script>
   <script src="./jira-view.js"></script>
+  <script src="./speech-view.js"></script>
 </body>
 </html>
