@@ -11,9 +11,9 @@
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark" aria-hidden="true"><span>译</span></span><span>smart<span class="brand-strong">Trans</span></span></div>
+      <div class="top-identity"><div class="brand"><span class="brand-mark" aria-hidden="true"><span>译</span></span><span>smart<span class="brand-strong">Trans</span></span></div><span class="top-note">中英双向 · 保留格式</span></div>
       <div class="top-actions">
-        <span class="top-note">中英双向 · 保留格式</span>
+        <button class="settings-button pin-button" id="pinButton" type="button" aria-pressed="false" title="置顶 Mini 窗口，切换其他应用时仍保持可见">置顶</button>
         <button class="settings-button" id="miniButton" type="button" aria-pressed="false" title="切换 Mini 模式 · ⌘⇧M">Mini 模式</button>
         <button class="settings-button" id="updatesButton" type="button">功能与更新</button>
         <button class="icon-button" id="shortcutsButton" type="button" aria-label="查看快捷键" title="快捷键">⌘</button>
@@ -149,7 +149,7 @@
   <dialog id="updatesDialog" class="modal updates-modal" aria-labelledby="updatesTitle">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2 id="updatesTitle">功能与更新</h2><button type="submit" aria-label="关闭功能与更新">×</button></div>
-      <p class="version-label">smartTrans · v0.3.4</p>
+      <p class="version-label">smartTrans · v0.3.5</p>
       <h3>功能清单</h3>
       <ul class="feature-list">
         <li><strong>中英双向翻译</strong><span>全文或选区翻译，保留原意与简单 Markdown 格式。</span></li>
@@ -159,7 +159,8 @@
         <li><strong>桌面快捷操作</strong><span>菜单栏常驻、全局唤起、剪贴板翻译与本机内容保存。</span></li>
       </ul>
       <h3>版本更新记录</h3>
-      <section class="release-entry"><h4>v0.3.4 <span>当前版本</span></h4><ul><li>新增 Mini 窗口，聚焦输入、翻译结果与英文朗读。</li><li>支持快捷键切换，返回时恢复完整窗口大小和工作模式。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.5 <span>当前版本</span></h4><ul><li>顶部说明移至品牌旁，与右侧功能菜单分开。</li><li>Mini 模式新增置顶开关，切换其他应用时保持可见。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.4</h4><ul><li>新增 Mini 窗口，聚焦输入、翻译结果与英文朗读。</li><li>支持快捷键切换，返回时恢复完整窗口大小和工作模式。</li></ul></section>
       <section class="release-entry"><h4>v0.3.3</h4><ul><li>简化编辑区顶部文案，调整垂直居中与高度。</li><li>移除逐字母拼读，保留英文朗读与语速控制。</li><li>新增功能清单与版本更新记录。</li></ul></section>
       <section class="release-entry"><h4>v0.3.2</h4><ul><li>新增 macOS 英文朗读、语速选择与停止播放。</li><li>支持编辑区、译文和 Jira 内容选区朗读。</li></ul></section>
       <section class="release-entry"><h4>v0.3.1</h4><ul><li>Jira 评论加入翻译与左右对照。</li><li>支持评论分页，显示作者、发布时间与编辑时间。</li></ul></section>

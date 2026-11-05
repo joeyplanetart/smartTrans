@@ -1,6 +1,20 @@
 (() => {
   const button = document.getElementById('miniButton');
-  let mini = false, changing = false, previousJira = false;
+  const pin = document.getElementById('pinButton');
+  let mini = false, changing = false, previousJira = false, pinned = false;
+  function showPinned(value) {
+    pinned = value;
+    pin.setAttribute('aria-pressed', String(value));
+    pin.textContent = value ? '已置顶' : '置顶';
+    pin.title = value ? '取消置顶 Mini 窗口' : '置顶 Mini 窗口，切换其他应用时仍保持可见';
+  }
+  pin.addEventListener('click', async () => {
+    if (!mini || changing) return;
+    pin.disabled = true;
+    try { showPinned(await window.smartTrans.setPinned(!pinned)); }
+    catch { pin.textContent = '重试置顶'; }
+    finally { pin.disabled = false; }
+  });
   async function toggleMini() {
     if (changing || document.querySelector('dialog[open]')) return;
     if (!mini && window.JiraView?.isBusy()) {
@@ -18,6 +32,7 @@
       }
       const enabled = await window.smartTrans.setMini(!mini);
       mini = enabled;
+      if (!mini) showPinned(false);
       document.body.classList.toggle('mini-mode', mini);
       button.textContent = mini ? '完整窗口 ↗' : 'Mini 模式';
       button.setAttribute('aria-pressed', String(mini));

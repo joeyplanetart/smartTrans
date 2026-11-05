@@ -104,6 +104,12 @@ app.whenReady().then(() => {
     ] },
     { label: "窗口", submenu: [{ role: "minimize" }, { role: "close" }] },
   ]));
+  ipcMain.handle("window-pin", (event, enabled) => {
+    fromMainWindow(event);
+    if (typeof enabled !== "boolean" || !miniMode) throw new Error("Pin is only available in Mini mode");
+    mainWindow.setAlwaysOnTop(enabled, "floating");
+    return mainWindow.isAlwaysOnTop();
+  });
   ipcMain.handle("window-mini", (event, enabled) => {
     fromMainWindow(event);
     if (typeof enabled !== "boolean") throw new Error("Invalid window mode");
@@ -119,6 +125,7 @@ app.whenReady().then(() => {
       const y = Math.max(area.y, Math.min(fullWindowBounds.y, area.y + area.height - height));
       mainWindow.setBounds({ x, y, width, height });
     } else {
+      mainWindow.setAlwaysOnTop(false);
       const original = fullWindowBounds || mainWindow.getBounds();
       const work = screen.getDisplayMatching(original).workArea;
       const width = Math.min(original.width, work.width), height = Math.min(original.height, work.height);

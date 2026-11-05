@@ -1,6 +1,6 @@
 {
   "name": "smart-translation",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "A focused Chinese-English translation editor powered by local AI CLIs.",
   "main": "electron/main.cjs",
