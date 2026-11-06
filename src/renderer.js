@@ -160,7 +160,7 @@ async function translate(override) {
     if (!response.ok) throw new Error(response.error);
     if (version !== requestVersion || editingVersion !== snapshot.editingVersion) { clearResult(); return; }
     const { translation: translated, timings } = response;
-    activeResult = { ...snapshot, translated };
+    activeResult = { ...snapshot, translated, target: request.target };
     translationText.textContent = translated;
     $("#resultBadge").textContent = request.target === "en" ? "英语" : "中文";
     $("#resultNote").textContent = snapshot.selected
@@ -323,6 +323,7 @@ window.smartTrans.desktopStatus().then((status) => {
 });
 document.addEventListener("keydown", (event) => {
   if (document.querySelector("dialog[open]")) return;
+  if (window.LearningView?.isActive()) return;
   if (window.JiraView?.isActive()) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); window.JiraView.translate(); }
     if (event.key === "Escape") window.JiraView.cancel();
@@ -349,3 +350,8 @@ setTarget(detectTarget(editor.value));
 updateEditorMeta();
 updateProviderStatus();
 window.TextTranslation = { isBusy: () => Boolean(currentRequest) };
+
+$("#favoriteResultButton").addEventListener("click", () => {
+  if (!activeResult) return;
+  window.FavoritesView?.addPair(activeResult.text, activeResult.translated, "文本翻译", activeResult.target);
+});

@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("smartTrans", {
+  listFavorites: () => ipcRenderer.invoke("favorites-list"),
+  saveFavorite: payload => ipcRenderer.invoke("favorites-save", payload),
+  removeFavorite: id => ipcRenderer.invoke("favorites-remove", id),
+  onFavoriteSelection: callback => ipcRenderer.on("favorite-selection", (_event, payload) => callback(payload)),
   setPinned: enabled => ipcRenderer.invoke("window-pin", enabled),
   setMini: enabled => ipcRenderer.invoke("window-mini", enabled),
   speak: payload => ipcRenderer.invoke("speech-start", payload),
@@ -8,6 +12,7 @@ contextBridge.exposeInMainWorld("smartTrans", {
   onSpeechState: callback => ipcRenderer.on("speech-state", (_event, state) => callback(state)),
   onSpeechAction: callback => ipcRenderer.on("speech-action", (_event, action) => callback(action)),
   translate: (payload) => ipcRenderer.invoke("translate", payload),
+  learningAssist: (payload) => ipcRenderer.invoke("learning-assist", payload),
   cancel: (requestId) => ipcRenderer.invoke("cancel-translation", requestId),
   onProgress: (callback) => ipcRenderer.on("translation-progress", (_event, payload) => callback(payload)),
   onEditorCommand: (callback) => ipcRenderer.on("editor-command", (_event, command) => callback(command)),

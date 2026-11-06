@@ -1,7 +1,7 @@
 (() => {
   const button = document.getElementById('miniButton');
   const pin = document.getElementById('pinButton');
-  let mini = false, changing = false, previousJira = false, pinned = false;
+  let mini = false, changing = false, previousJira = false, previousLearning = false, pinned = false;
   function showPinned(value) {
     pinned = value;
     pin.setAttribute('aria-pressed', String(value));
@@ -27,7 +27,9 @@
     try {
       if (!mini) {
         previousJira = Boolean(window.JiraView?.isActive());
+        previousLearning = Boolean(window.LearningView?.isActive());
         if (previousJira) window.JiraView.close();
+        if (previousLearning) window.LearningView.close();
         if (window.JiraView?.isActive()) return;
       }
       const enabled = await window.smartTrans.setMini(!mini);
@@ -41,12 +43,17 @@
         if (!window.TextTranslation.isBusy()) window.JiraView.open();
         previousJira = false;
       }
+      if (!mini && previousLearning) {
+        if (!window.TextTranslation.isBusy()) document.getElementById('learningModeButton').click();
+        previousLearning = false;
+      }
       if (mini) document.getElementById('editor').focus();
     } catch {
       if (!mini && previousJira) window.JiraView.open();
       button.textContent = '切换失败，请重试';
     } finally { changing = false; button.disabled = false; }
   }
+  window.MiniView = { expand: async () => { if (mini) await toggleMini(); return !mini; } };
   button.addEventListener('click', toggleMini);
   document.addEventListener('keydown', event => {
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyM') {

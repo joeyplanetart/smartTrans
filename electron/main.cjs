@@ -1,8 +1,9 @@
 const path = require("node:path");
 const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut, net, safeStorage, shell } = require("electron");
-const { runTranslation, cliStatus, dispose } = require("./cli.cjs");
+const { runTranslation, runLearningAssist, cliStatus, dispose } = require("./cli.cjs");
 const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, commentsApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
 const { JiraConnections } = require("./jira-connections.cjs");
+const { Favorites } = require("./favorites.cjs");
 
 const { Speech } = require("./speech.cjs");
 const speech = new Speech();
@@ -46,7 +47,7 @@ function createWindow() {
   mainWindow.webContents.on("context-menu", (_event, params) => {
     const selection = (params.selectionText || "").trim();
     if (!selection) return;
-    const items = [];
+    const items = [{ label: "收藏单词 / 短句", click: () => mainWindow?.webContents.send("favorite-selection", { text: selection }) }];
     if (params.isEditable) items.push({ label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") });
     if (/[a-z]/i.test(selection)) items.push({ label: "朗读英文", click: () => mainWindow?.webContents.send("speech-action", { text: selection }) });
     items.push({ type: "separator" }, { role: "copy", label: "复制" }, { role: "selectAll", label: "全选" });
@@ -88,6 +89,22 @@ function fromMainWindow(event) {
 
 app.whenReady().then(() => {
   if (!primaryInstance) return;
+  const favorites = new Favorites(app.getPath("userData"));
+  ipcMain.handle("favorites-list", event => {
+    fromMainWindow(event);
+    try { return { ok: true, items: favorites.list() }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("favorites-save", (event, payload) => {
+    fromMainWindow(event);
+    try { return { ok: true, ...favorites.save(payload) }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
+  ipcMain.handle("favorites-remove", (event, id) => {
+    fromMainWindow(event);
+    try { return { ok: true, item: favorites.remove(id) }; }
+    catch (error) { return { ok: false, error: error.message }; }
+  });
   const jiraConnections = new JiraConnections(app.getPath("userData"), safeStorage);
   const jiraFetch = (input, init) => net.fetch(input, init);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
@@ -161,6 +178,16 @@ app.whenReady().then(() => {
       });
       return { ok: true, ...result };
     } catch (error) { return { ok: false, error: error.message }; }
+    finally { activeTranslation = null; }
+  });
+  ipcMain.handle("learning-assist", async (event, payload) => {
+    fromMainWindow(event);
+    if (activeTranslation) return { ok: false, error: "请等待当前 AI 操作完成。" };
+    if (typeof payload?.requestId !== "string" || payload.requestId.length > 100) return { ok: false, error: "请求无效。" };
+    const controller = new AbortController();
+    activeTranslation = { requestId: payload.requestId, controller };
+    try { return { ok: true, feedback: await runLearningAssist(payload, { signal: controller.signal }) }; }
+    catch (error) { return { ok: false, error: error.message }; }
     finally { activeTranslation = null; }
   });
   ipcMain.handle("cancel-translation", (event, requestId) => {
