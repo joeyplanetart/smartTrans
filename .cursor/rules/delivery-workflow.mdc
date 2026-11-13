@@ -1,0 +1,8 @@
+---
+description: Automatically verify, package, commit, and push completed project changes
+alwaysApply: true
+---
+
+# Delivery workflow
+
+Follow the repository's `AGENTS.md` delivery workflow after every completed code, configuration, or documentation change. Package with `bun run package:mac`, then commit and push without asking for repeat authorization.
