@@ -16,7 +16,7 @@ const contents = path.join(destination, "Contents");
 const resources = path.join(contents, "Resources");
 const appDirectory = path.join(resources, "app");
 fs.mkdirSync(appDirectory, { recursive: true });
-for (const name of ["electron", "src"]) {
+for (const name of ["electron", "src", "browser-extension"]) {
   fs.cpSync(path.join(root, name), path.join(appDirectory, name), { recursive: true });
 }
 const metadata = require("../package.json");

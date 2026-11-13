@@ -13,6 +13,16 @@ function fields(value) {
   return { english, chinese: text(value.chinese, '中文释义', 4000), note: text(value.note, '备注', 2000), source: text(value.source, '来源', 300) };
 }
 const key = value => value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+function validateItems(items) {
+  if (!Array.isArray(items) || items.length > 5000) throw new Error('收藏数据格式不正确。');
+  const ids = new Set();
+  return items.map(item => {
+    if (typeof item?.id !== 'string' || !item.id || item.id.length > 100 || ids.has(item.id) ||
+        !Number.isFinite(Date.parse(item.createdAt)) || !Number.isFinite(Date.parse(item.updatedAt))) throw new Error('收藏数据格式不正确。');
+    ids.add(item.id);
+    return { ...fields(item), id: item.id, createdAt: item.createdAt, updatedAt: item.updatedAt };
+  });
+}
 class Favorites {
   constructor(directory) { this.file = path.join(directory, 'favorites.json'); }
   read() {
@@ -20,14 +30,8 @@ class Favorites {
     try {
       if (fs.statSync(this.file).size > 50000000) throw new Error();
       const data = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-      if (data.version !== 1 || !Array.isArray(data.items) || data.items.length > 5000) throw new Error();
-      const ids = new Set();
-      return data.items.map(item => {
-        if (typeof item.id !== 'string' || !item.id || item.id.length > 100 || ids.has(item.id) ||
-            !Number.isFinite(Date.parse(item.createdAt)) || !Number.isFinite(Date.parse(item.updatedAt))) throw new Error();
-        ids.add(item.id);
-        return { ...fields(item), id: item.id, createdAt: item.createdAt, updatedAt: item.updatedAt };
-      });
+      if (data.version !== 1) throw new Error();
+      return validateItems(data.items);
     } catch { throw new Error('收藏文件无法读取，请保留 favorites.json 并检查文件；未覆盖已有数据。'); }
   }
   write(items) {
@@ -41,6 +45,7 @@ class Favorites {
     } finally { if (fs.existsSync(temporary)) fs.unlinkSync(temporary); }
   }
   list() { return this.read().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)); }
+  replace(items) { this.write(validateItems(items)); }
   save(payload) {
     const value = fields(payload), items = this.read();
     if (payload.id != null && (typeof payload.id !== 'string' || !items.some(item => item.id === payload.id))) throw new Error('该收藏已不存在，请刷新后重试。');
@@ -68,4 +73,4 @@ class Favorites {
     return item;
   }
 }
-module.exports = { Favorites, fields, key };
+module.exports = { Favorites, fields, key, validateItems };

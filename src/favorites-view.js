@@ -120,6 +120,9 @@
     const chinese = /[\u3400-\u9fff]/.test(text) && (text.match(/[\u3400-\u9fff]/g)?.length || 0) > (text.match(/[a-z]/gi)?.length || 0) / 2;
     showEditor({ english: chinese ? '' : text, chinese: chinese ? text : '', source: window.JiraView?.isActive() ? 'Jira 选区' : window.LearningView?.isActive() ? '英语学习选区' : '文本选区' });
   });
+  window.smartTrans.onFavoritesChanged?.(() => {
+    if (library.open) refresh().catch(error => status(error.message));
+  });
   window.FavoritesView = { addPair(original, translated, source, target) {
     const english = target === 'en' ? translated : original;
     const chinese = target === 'en' ? original : translated;

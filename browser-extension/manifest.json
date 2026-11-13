@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "smartTrans 网页翻译",
+  "version": "0.1.0",
+  "description": "选中网页文字后右键翻译，并与本机 smartTrans 收藏本共享数据。",
+  "permissions": ["contextMenus", "nativeMessaging", "scripting", "activeTab"],
+  "background": { "service_worker": "background.js" }
+}

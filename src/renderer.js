@@ -12,6 +12,7 @@ const stored = localStorage.getItem("smart-trans-document");
 
 if (stored !== null) editor.value = stored;
 providerSelect.value = localStorage.getItem("smart-trans-provider") === "cursor" ? "cursor" : "codex";
+window.smartTrans.setBrowserProvider(providerSelect.value);
 
 let target = "en";
 let targetWasChosen = false;
@@ -302,12 +303,44 @@ $("#copyButton").addEventListener("click", async () => {
   setTimeout(() => { $("#copyButton").textContent = "复制译文"; }, 1600);
 });
 $("#settingsButton").addEventListener("click", () => settingsDialog.showModal());
+window.smartTrans.notesStatus().then(({ enabled, count }) => {
+  $("#notesEnabled").checked = enabled;
+  $("#notesButton").classList.toggle("hidden", !enabled);
+  $("#notesStatus").textContent = count ? `已保存 ${count} 张便签。` : '';
+}).catch(error => { $("#notesStatus").textContent = error.message; });
+$("#notesEnabled").addEventListener("change", async event => {
+  const enabled = event.target.checked;
+  event.target.disabled = true;
+  try {
+    const result = await window.smartTrans.setNotesEnabled(enabled);
+    $("#notesButton").classList.toggle("hidden", !enabled);
+    $("#notesStatus").textContent = enabled
+      ? `便签已启用。${result.count ? `已保存 ${result.count} 张，点击顶部「便签」打开。` : '点击顶部「便签」新建。'}`
+      : `便签已关闭，${result.count} 张便签已保留。`;
+  } catch (error) { event.target.checked = !enabled; $("#notesStatus").textContent = error.message; }
+  finally { event.target.disabled = false; }
+});
+$("#notesButton").addEventListener("click", async () => {
+  try { await window.smartTrans.openNotes(); }
+  catch (error) { $("#notesStatus").textContent = error.message; settingsDialog.showModal(); }
+});
+$("#browserExtensionFolder").addEventListener("click", async () => {
+  const error = await window.smartTrans.openBrowserExtensionFolder();
+  if (error) $("#browserBridgeStatus").textContent = error;
+});
+$("#browserBridgeInstall").addEventListener("click", async () => {
+  const response = await window.smartTrans.installBrowserBridge($("#browserExtensionId").value.trim());
+  $("#browserBridgeStatus").textContent = response.ok
+    ? `已为 ${response.browsers.join('、')} 安装桥接。保持 smartTrans 运行，即可在网页选中文字后右键翻译。` : response.error;
+});
 $("#shortcutsButton").addEventListener("click", () => $("#shortcutsDialog").showModal());
 $("#saveSettings").addEventListener("click", () => {
   localStorage.setItem("smart-trans-provider", providerSelect.value);
+  window.smartTrans.setBrowserProvider(providerSelect.value);
 });
 providerSelect.addEventListener("change", () => {
   localStorage.setItem("smart-trans-provider", providerSelect.value);
+  window.smartTrans.setBrowserProvider(providerSelect.value);
   updateProviderStatus();
 });
 async function updateProviderStatus() {

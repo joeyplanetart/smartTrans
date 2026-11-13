@@ -16,6 +16,7 @@
         <button class="settings-button pin-button" id="pinButton" type="button" aria-pressed="false" title="置顶 Mini 窗口，切换其他应用时仍保持可见">置顶</button>
         <button class="settings-button" id="miniButton" type="button" aria-pressed="false" title="切换 Mini 模式 · ⌘⇧M">Mini 模式</button>
         <button class="settings-button" id="favoritesButton" type="button">☆ 收藏本</button>
+        <button class="settings-button hidden" id="notesButton" type="button">▣ 便签</button>
         <button class="settings-button" id="updatesButton" type="button">功能与更新</button>
         <button class="icon-button" id="shortcutsButton" type="button" aria-label="查看快捷键" title="快捷键">⌘</button>
         <button class="settings-button" id="settingsButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4a8 8 0 0 0-.1-1.2l1.7-1.3-1.7-3-2 .8a8 8 0 0 0-2.1-1.2L15.5 4h-3l-.4 2.1a8 8 0 0 0-2.1 1.2l-2-.8-1.7 3L8 10.8a8 8 0 0 0 0 2.4l-1.7 1.3 1.7 3 2-.8a8 8 0 0 0 2.1 1.2l.4 2.1h3l.4-2.1a8 8 0 0 0 2.1-1.2l2 .8 1.7-3-1.7-1.3A8 8 0 0 0 20 12Z"/></svg><span>设置</span></button>
@@ -192,14 +193,45 @@
       <label for="textLayout">原文与译文布局</label>
       <select id="textLayout"><option value="stacked">上下布局（默认）</option><option value="side-by-side">左右布局</option></select>
       <p class="setting-footnote">用于文本翻译，即时生效并保存在本机。Mini 模式和窄窗口自动使用上下布局。</p>
+      <section class="backup-settings" aria-labelledby="notesHeading">
+        <h3 id="notesHeading">桌面便签</h3>
+        <label class="notes-setting"><input id="notesEnabled" type="checkbox"> 启用桌面便签</label>
+        <p>独立小窗口，可新建、编辑、换色和置顶。默认关闭；关闭后便签内容仍保存在本机。</p>
+        <p id="notesStatus" class="backup-status" role="status"></p>
+      </section>
+      <section class="backup-settings" aria-labelledby="browserExtensionHeading">
+        <h3 id="browserExtensionHeading">浏览器右键翻译</h3>
+        <p>先在 Chrome 或 Edge 的扩展页面开启开发者模式，选择「加载已解压的扩展程序」，打开下方文件夹。复制扩展 ID，在这里安装本机桥接。</p>
+        <div class="backup-actions"><button class="secondary-button" id="browserExtensionFolder" type="button">打开扩展文件夹</button></div>
+        <label for="browserExtensionId">扩展 ID</label>
+        <input id="browserExtensionId" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="chrome://extensions 中显示的 32 位 ID">
+        <div class="backup-actions"><button class="secondary-button" id="browserBridgeInstall" type="button">安装浏览器桥接</button></div>
+        <p id="browserBridgeStatus" class="backup-status" role="status"></p>
+      </section>
+      <section class="backup-settings" aria-labelledby="backupHeading">
+        <h3 id="backupHeading">数据备份</h3>
+        <p>备份包含：编辑区正文、英语学习进度与错题、收藏本、桌面便签，以及翻译引擎、布局、朗读语速、最近模式和 Jira 链接。</p>
+        <p>不包含：Jira API Token 和连接信息、当前运行中的票据与译文、临时翻译缓存、CLI 登录状态。备份是未加密的 JSON 文件，请妥善保存。</p>
+        <div class="backup-actions"><button class="secondary-button" id="backupExport" type="button">导出备份…</button><button class="secondary-button" id="backupImport" type="button">导入备份…</button></div>
+        <p id="backupStatus" class="backup-status" role="status"></p>
+      </section>
       <p class="setting-footnote" id="desktopStatus"></p>
       <button class="primary-button modal-save" id="saveSettings" type="submit">完成</button>
     </form>
   </dialog>
+  <dialog id="backupPreviewDialog" class="modal backup-preview" aria-labelledby="backupPreviewTitle">
+    <div class="modal-content">
+      <div class="modal-head"><h2 id="backupPreviewTitle">确认导入备份</h2><button id="backupPreviewClose" type="button" aria-label="关闭">×</button></div>
+      <p id="backupPreviewSummary"></p>
+      <p>导入会替换此设备上的编辑区正文、学习记录、全部收藏、便签和上述偏好。旧版备份没有便签时，会保留当前便签。请先导出当前数据，以便需要时恢复。</p>
+      <p id="backupPreviewError" class="backup-status" role="alert"></p>
+      <div class="backup-actions"><button id="backupCancel" class="secondary-button" type="button">取消</button><button id="backupConfirm" class="primary-button" type="button">替换现有数据</button></div>
+    </div>
+  </dialog>
   <dialog id="updatesDialog" class="modal updates-modal" aria-labelledby="updatesTitle">
     <form method="dialog" class="modal-content">
       <div class="modal-head"><h2 id="updatesTitle">功能与更新</h2><button type="submit" aria-label="关闭功能与更新">×</button></div>
-      <p class="version-label">smartTrans · v0.3.11</p>
+      <p class="version-label">smartTrans · v0.3.12</p>
       <h3>功能清单</h3>
       <ul class="feature-list">
         <li><strong>单词与短句收藏</strong><span>保存中英文、来源和备注，支持搜索、编辑、朗读与取消收藏。</span></li>
@@ -209,9 +241,12 @@
         <li><strong>英文朗读</strong><span>选中原文或译文听发音，支持语速切换、右键与快捷键。</span></li>
         <li><strong>个人英语学习</strong><span>20 天渐进路径，词汇、语法、听说读写练习，错题复习与 AI 反馈。</span></li>
         <li><strong>桌面快捷操作</strong><span>菜单栏常驻、全局唤起、剪贴板翻译与本机内容保存。</span></li>
+        <li><strong>桌面便签</strong><span>可选开启，支持简单排版、可勾选任务列表、换色和置顶，内容保存在本机。</span></li>
+        <li><strong>本机数据备份</strong><span>导出和导入编辑正文、学习记录、收藏本及使用偏好。</span></li>
       </ul>
       <h3>版本更新记录</h3>
-      <section class="release-entry"><h4>v0.3.11 <span>当前版本</span></h4><ul><li>新增本机收藏本，支持搜索、编辑释义、备注和朗读。</li><li>支持选区右键收藏、翻译结果一键收藏，以及重复提示和取消收藏撤销。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.12 <span>当前版本</span></h4><ul><li>设置中新增本机数据备份导出与导入，导入前预览并确认替换。</li><li>备份编辑正文、学习记录、收藏和偏好，不包含 Jira 凭据。</li></ul></section>
+      <section class="release-entry"><h4>v0.3.11</h4><ul><li>新增本机收藏本，支持搜索、编辑释义、备注和朗读。</li><li>支持选区右键收藏、翻译结果一键收藏，以及重复提示和取消收藏撤销。</li></ul></section>
       <section class="release-entry"><h4>v0.3.10</h4><ul><li>为英语学习中的 600 个词汇添加美式音标，可配合朗读按钮学习发音。</li></ul></section>
       <section class="release-entry"><h4>v0.3.9</h4><ul><li>英语学习扩展为每天 30 个词汇、3 道语法题；词汇按每组 10 个浏览。</li><li>完整路径包含 600 个不重复词汇和 60 道语法题，保留已有学习记录。</li></ul></section>
       <section class="release-entry"><h4>v0.3.8</h4><ul><li>修复学习页「听发音」无声的问题，并显示朗读状态或错误原因。</li></ul></section>
@@ -255,5 +290,6 @@
   <script src="./learning-core.js"></script>
   <script src="./learning-view.js"></script>
   <script src="./favorites-view.js"></script>
+  <script src="./backup-view.js"></script>
 </body>
 </html>
