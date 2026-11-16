@@ -3,6 +3,7 @@ const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const { validateItems } = require('./favorites.cjs');
 const { validateNotes } = require('./notes.cjs');
+const { validateItems: validateTodos } = require('./todos.cjs');
 
 const FORMAT = 'smartTrans-backup';
 const MAX_BYTES = 100_000_000;
@@ -32,17 +33,18 @@ function validateBackup(value) {
     throw new Error('备份中的 Jira 链接格式不正确。');
   const favorites = validateItems(value.favorites);
   const notes = value.notes == null ? null : validateNotes(value.notes);
+  const todos = value.todos == null ? null : validateTodos(value.todos);
   const cleaned = { format: FORMAT, version: 1, exportedAt: value.exportedAt,
     data: { document: data.document, learning: data.learning, preferences: {
       provider: data.preferences.provider, layout: data.preferences.layout,
       speechRate: data.preferences.speechRate, mode: data.preferences.mode, jiraUrl: data.preferences.jiraUrl,
-    } }, favorites, notes };
+    } }, favorites, notes, todos };
   if (Buffer.byteLength(JSON.stringify(cleaned), 'utf8') > MAX_BYTES) throw new Error('备份文件超过 100 MB 限制。');
   return cleaned;
 }
 
-function createBackup(data, favorites, notes = null) {
-  return validateBackup({ format: FORMAT, version: 1, exportedAt: new Date().toISOString(), data, favorites, notes });
+function createBackup(data, favorites, notes = null, todos = []) {
+  return validateBackup({ format: FORMAT, version: 1, exportedAt: new Date().toISOString(), data, favorites, notes, todos });
 }
 
 function readBackup(file) {

@@ -16,6 +16,7 @@
         <button class="settings-button pin-button" id="pinButton" type="button" aria-pressed="false" title="置顶 Mini 窗口，切换其他应用时仍保持可见">置顶</button>
         <button class="settings-button" id="miniButton" type="button" aria-pressed="false" title="切换 Mini 模式 · ⌘⇧M">Mini 模式</button>
         <button class="settings-button" id="favoritesButton" type="button">☆ 收藏本</button>
+        <button class="settings-button" id="todosButton" type="button">☑ 待办</button>
         <button class="settings-button hidden" id="notesButton" type="button">▣ 便签</button>
         <button class="settings-button" id="updatesButton" type="button">功能与更新</button>
         <button class="icon-button" id="shortcutsButton" type="button" aria-label="查看快捷键" title="快捷键">⌘</button>
@@ -162,6 +163,28 @@
     </form>
   </dialog>
   <div id="favoritesToast" class="favorites-toast hidden" role="status"></div>
+  <dialog id="todosDialog" class="modal todos-dialog" aria-labelledby="todosTitle">
+    <div class="modal-content">
+      <div class="modal-head"><h2 id="todosTitle">个人待办</h2><button id="todosClose" type="button" aria-label="关闭待办">×</button></div>
+      <p>快速记下要做的事，内容保存在本机。</p>
+      <form id="todoQuickForm" class="todo-quick"><input id="todoQuickTitle" maxlength="300" required placeholder="输入标题，按回车新增" aria-label="待办标题"><button class="primary-button" type="submit">新增</button></form>
+      <div class="todo-tools"><button id="todoFromClipboard" class="secondary-button" type="button">剪贴板转待办</button><button id="todoDetailedNew" class="secondary-button" type="button">详细新增</button><span id="todosCount"></span></div>
+      <p id="todosStatus" class="backup-status" role="status"></p>
+      <div id="todosList" class="todos-list"></div>
+    </div>
+  </dialog>
+  <dialog id="todoEditDialog" class="modal todo-edit-dialog" aria-labelledby="todoEditTitle">
+    <form id="todoEditForm" class="modal-content">
+      <div class="modal-head"><h2 id="todoEditTitle">详细待办</h2><button id="todoEditClose" type="button" aria-label="关闭编辑">×</button></div>
+      <label for="todoTitle">标题</label><input id="todoTitle" maxlength="300" required>
+      <label for="todoDetail">内容</label><textarea id="todoDetail" maxlength="10000" rows="4" placeholder="可选，粘贴或补充更多内容"></textarea>
+      <div class="todo-fields"><label>截止日期<input id="todoDue" type="datetime-local"></label><label>提醒时间<input id="todoReminder" type="datetime-local"></label></div>
+      <div class="todo-fields"><label>优先级<select id="todoPriority"><option value="normal">普通</option><option value="high">高</option><option value="low">低</option></select></label><label>进度 <span id="todoProgressValue">0%</span><input id="todoProgress" type="range" min="0" max="100" step="10" value="0"></label></div>
+      <label for="todoRepeat">重复</label><select id="todoRepeat"><option value="none">不重复</option><option value="daily">每天</option><option value="weekly">每周</option><option value="monthly">每月</option></select>
+      <p class="setting-footnote">完成重复待办后，会按截止日期自动生成下一条。桌面提醒在应用运行时发送。</p>
+      <p id="todoEditStatus" class="backup-status" role="alert"></p><button class="primary-button" type="submit">保存待办</button>
+    </form>
+  </dialog>
   <dialog id="favoritesDialog" class="modal favorites-dialog" aria-labelledby="favoritesTitle">
     <div class="modal-content">
       <div class="modal-head"><h2 id="favoritesTitle">收藏本</h2><button id="favoritesClose" type="button" aria-label="关闭收藏本">×</button></div>
@@ -210,7 +233,7 @@
       </section>
       <section class="backup-settings" aria-labelledby="backupHeading">
         <h3 id="backupHeading">数据备份</h3>
-        <p>备份包含：编辑区正文、英语学习进度与错题、收藏本、桌面便签，以及翻译引擎、布局、朗读语速、最近模式和 Jira 链接。</p>
+        <p>备份包含：编辑区正文、英语学习进度与错题、收藏本、个人待办、桌面便签，以及翻译引擎、布局、朗读语速、最近模式和 Jira 链接。</p>
         <p>不包含：Jira API Token 和连接信息、当前运行中的票据与译文、临时翻译缓存、CLI 登录状态。备份是未加密的 JSON 文件，请妥善保存。</p>
         <div class="backup-actions"><button class="secondary-button" id="backupExport" type="button">导出备份…</button><button class="secondary-button" id="backupImport" type="button">导入备份…</button></div>
         <p id="backupStatus" class="backup-status" role="status"></p>
@@ -223,7 +246,7 @@
     <div class="modal-content">
       <div class="modal-head"><h2 id="backupPreviewTitle">确认导入备份</h2><button id="backupPreviewClose" type="button" aria-label="关闭">×</button></div>
       <p id="backupPreviewSummary"></p>
-      <p>导入会替换此设备上的编辑区正文、学习记录、全部收藏、便签和上述偏好。旧版备份没有便签时，会保留当前便签。请先导出当前数据，以便需要时恢复。</p>
+      <p>导入会替换此设备上的编辑区正文、学习记录、全部收藏、待办、便签和上述偏好。旧版备份没有待办或便签时，会保留当前对应内容。请先导出当前数据，以便需要时恢复。</p>
       <p id="backupPreviewError" class="backup-status" role="alert"></p>
       <div class="backup-actions"><button id="backupCancel" class="secondary-button" type="button">取消</button><button id="backupConfirm" class="primary-button" type="button">替换现有数据</button></div>
     </div>
@@ -242,6 +265,7 @@
         <li><strong>个人英语学习</strong><span>20 天渐进路径，词汇、语法、听说读写练习，错题复习与 AI 反馈。</span></li>
         <li><strong>桌面快捷操作</strong><span>菜单栏常驻、全局唤起、剪贴板翻译与本机内容保存。</span></li>
         <li><strong>桌面便签</strong><span>可选开启，支持简单排版、可勾选任务列表、换色和置顶，内容保存在本机。</span></li>
+        <li><strong>个人待办</strong><span>标题快速新增、剪贴板和选区一键转待办；支持截止时间、提醒、优先级、进度和重复任务。</span></li>
         <li><strong>本机数据备份</strong><span>导出和导入编辑正文、学习记录、收藏本及使用偏好。</span></li>
       </ul>
       <h3>版本更新记录</h3>
@@ -290,6 +314,7 @@
   <script src="./learning-core.js"></script>
   <script src="./learning-view.js"></script>
   <script src="./favorites-view.js"></script>
+  <script src="./todos-view.js"></script>
   <script src="./backup-view.js"></script>
 </body>
 </html>

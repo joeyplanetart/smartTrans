@@ -1,9 +1,10 @@
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut, net, safeStorage, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, clipboard, Menu, screen, Tray, nativeImage, globalShortcut, net, safeStorage, shell, dialog, Notification } = require("electron");
 const { runTranslation, runLearningAssist, cliStatus, dispose } = require("./cli.cjs");
 const { readIssue, parseJiraUrl, safeUrl, issueApiUrl, commentsApiUrl, importIssueJson, resolveConnection } = require("./jira.cjs");
 const { JiraConnections } = require("./jira-connections.cjs");
 const { Favorites } = require("./favorites.cjs");
+const { Todos } = require("./todos.cjs");
 const { Notes, offsetNoteBounds } = require("./notes.cjs");
 const { createBackup, readBackup, writeBackup } = require("./backup.cjs");
 const { createBrowserBridge } = require('./browser-bridge.cjs');
@@ -56,7 +57,8 @@ function createWindow() {
   mainWindow.webContents.on("context-menu", (_event, params) => {
     const selection = (params.selectionText || "").trim();
     if (!selection) return;
-    const items = [{ label: "收藏单词 / 短句", click: () => mainWindow?.webContents.send("favorite-selection", { text: selection }) }];
+    const items = [{ label: "转为待办", click: () => mainWindow?.webContents.send("todo-selection", { text: selection }) },
+      { label: "收藏单词 / 短句", click: () => mainWindow?.webContents.send("favorite-selection", { text: selection }) }];
     if (params.isEditable) items.push({ label: "翻译选中内容", click: () => mainWindow?.webContents.send("translate-selection") });
     if (/[a-z]/i.test(selection)) items.push({ label: "朗读英文", click: () => mainWindow?.webContents.send("speech-action", { text: selection }) });
     items.push({ type: "separator" }, { role: "copy", label: "复制" }, { role: "selectAll", label: "全选" });
@@ -138,6 +140,24 @@ function fromNote(event, id) {
 app.whenReady().then(() => {
   if (!primaryInstance) return;
   const favorites = new Favorites(app.getPath("userData"));
+  const todos = new Todos(app.getPath('userData'));
+  function checkTodoReminders() {
+    try {
+      if (!Notification.isSupported()) return;
+      for (const item of todos.dueReminders()) {
+        const notice = new Notification({ title: '待办提醒 · smartTrans', body: item.title });
+        notice.on('click', () => showWindow({ type: 'todo' }));
+        notice.show();
+      }
+    } catch (error) { console.error('Todo reminder check failed:', error); }
+  }
+  setInterval(checkTodoReminders, 30_000);
+  checkTodoReminders();
+  ipcMain.handle('todos-list', event => { fromMainWindow(event); try { return { ok: true, items: todos.list() }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-save', (event, payload) => { fromMainWindow(event); try { const item = todos.save(payload); checkTodoReminders(); return { ok: true, item }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-complete', (event, id, complete) => { fromMainWindow(event); try { return { ok: true, items: todos.complete(id, complete) }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-remove', (event, id) => { fromMainWindow(event); try { todos.remove(id); return { ok: true }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-clipboard', event => { fromMainWindow(event); return clipboard.readText(); });
   notes = new Notes(app.getPath('userData'));
   ipcMain.handle('notes-status', event => { fromMainWindow(event); return { enabled: notes.data.enabled, count: notes.list().length }; });
   ipcMain.handle('notes-enabled', (event, enabled) => {
@@ -272,7 +292,7 @@ app.whenReady().then(() => {
   ipcMain.handle("backup-export", async (event, data) => {
     fromMainWindow(event);
     try {
-      const backup = createBackup(data, favorites.read(), notes.data);
+      const backup = createBackup(data, favorites.read(), notes.data, todos.read());
       const date = new Date().toISOString().slice(0, 10);
       const choice = await dialog.showSaveDialog(mainWindow, {
         title: "导出 smartTrans 备份", defaultPath: `smartTrans-backup-${date}.json`,
@@ -280,7 +300,7 @@ app.whenReady().then(() => {
       });
       if (choice.canceled || !choice.filePath) return { ok: true, canceled: true };
       writeBackup(choice.filePath, backup);
-      return { ok: true, filePath: choice.filePath, favorites: backup.favorites.length };
+      return { ok: true, filePath: choice.filePath, favorites: backup.favorites.length, todos: backup.todos.length };
     } catch (error) { return { ok: false, error: error.message }; }
   });
   ipcMain.handle("backup-open", async event => {
@@ -300,15 +320,22 @@ app.whenReady().then(() => {
     fromMainWindow(event);
     if (!pendingBackup) return { ok: false, error: "请先选择备份文件。" };
     try {
-      const beforeNotes = notes.data;
+      const beforeNotes = notes.data, beforeTodos = todos.read();
       if (pendingBackup.notes) notes.replace(pendingBackup.notes);
-      try { favorites.replace(pendingBackup.favorites); }
-      catch (error) { if (pendingBackup.notes) notes.replace(beforeNotes); throw error; }
+      try {
+        if (pendingBackup.todos) todos.replace(pendingBackup.todos);
+        favorites.replace(pendingBackup.favorites);
+      } catch (error) {
+        if (pendingBackup.notes) notes.replace(beforeNotes);
+        if (pendingBackup.todos) todos.replace(beforeTodos);
+        throw error;
+      }
       if (pendingBackup.notes) {
         for (const window of noteWindows.values()) window.destroy();
         if (notes.data.enabled) for (const item of notes.list()) openNote(item);
       }
       pendingBackup = null;
+      checkTodoReminders();
       return { ok: true };
     } catch (error) { return { ok: false, error: error.message }; }
   });

@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("smartTrans", {
+  listTodos: () => ipcRenderer.invoke('todos-list'),
+  saveTodo: payload => ipcRenderer.invoke('todos-save', payload),
+  completeTodo: (id, complete) => ipcRenderer.invoke('todos-complete', id, complete),
+  removeTodo: id => ipcRenderer.invoke('todos-remove', id),
+  readTodoClipboard: () => ipcRenderer.invoke('todos-clipboard'),
+  onTodoSelection: callback => ipcRenderer.on('todo-selection', (_event, payload) => callback(payload)),
   exportBackup: data => ipcRenderer.invoke("backup-export", data),
   openBackup: () => ipcRenderer.invoke("backup-open"),
   restoreBackupFavorites: () => ipcRenderer.invoke("backup-restore-favorites"),

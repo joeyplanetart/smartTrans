@@ -19,3 +19,22 @@
 #settingsDialog{max-height:85vh;overflow-y:auto}
 #browserExtensionId{display:block;width:100%;margin-top:8px;padding:9px 11px;border:1px solid #dce4d6;border-radius:7px;font-size:12px}
 .notes-setting{display:flex!important;align-items:center;gap:7px;margin:12px 0!important}.notes-setting input{accent-color:#7467e8}.mini-mode #notesButton{display:none!important}
+.todos-dialog { width: min(720px, calc(100vw - 30px)); max-height: 84vh; overflow: auto; }
+.todo-edit-dialog { width: min(560px, calc(100vw - 30px)); max-height: 85vh; overflow: auto; }
+.todo-edit-dialog .modal-content { display: grid; gap: 10px; }
+.todo-quick, .todo-tools, .todo-fields, .todo-card-head, .todo-actions { display: flex; gap: 10px; align-items: center; }
+.todo-quick input { flex: 1; min-width: 0; }
+.todo-quick input, .todo-edit-dialog input:not([type=range]), .todo-edit-dialog textarea { border: 1px solid #dedee7; border-radius: 8px; padding: 10px; background: #fff; }
+.todo-tools { margin: 16px 0; flex-wrap: wrap; }
+.todo-tools span { margin-left: auto; color: var(--muted, #777); }
+.todo-fields > label { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.todo-fields input, .todo-fields select, .todo-edit-dialog textarea, .todo-edit-dialog > input { width: 100%; box-sizing: border-box; }
+.todos-list { display: grid; gap: 10px; }
+.todo-card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; background: #fff; }
+.todo-card.completed { opacity: .65; }
+.todo-card.completed strong { text-decoration: line-through; }
+.todo-card-head strong { overflow-wrap: anywhere; }
+.todo-detail { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.todo-meta { color: #666; font-size: 12px; margin: 8px 0; }
+.todo-actions { justify-content: flex-end; }
+.mini-mode #todosButton { display: none!important; }

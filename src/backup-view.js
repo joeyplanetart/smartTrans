@@ -29,7 +29,7 @@
     try {
       const result = await window.smartTrans.exportBackup(snapshot());
       if (!result.ok) throw new Error(result.error);
-      if (!result.canceled) message(`备份已导出：${result.filePath}（${result.favorites} 条收藏）`);
+      if (!result.canceled) message(`备份已导出：${result.filePath}（${result.favorites} 条收藏、${result.todos} 条待办）`);
     } catch (error) { message(`导出失败：${error.message}`); }
     finally { busy = false; $('backupExport').disabled = false; }
   });
@@ -44,7 +44,7 @@
       if (result.canceled) return;
       pending = result.backup;
       const dayCount = Object.values(pending.data.learning?.days || {}).filter(day => day?.completed).length;
-      $('backupPreviewSummary').textContent = `文件：${result.filePath}\n导出时间：${new Date(pending.exportedAt).toLocaleString('zh-CN')}\n编辑区：${pending.data.document.length} 字符 · 已完成学习：${dayCount} 天 · 收藏：${pending.favorites.length} 条 · 便签：${pending.notes ? `${pending.notes.items.length} 张` : '旧版备份，保留当前便签'}`;
+      $('backupPreviewSummary').textContent = `文件：${result.filePath}\n导出时间：${new Date(pending.exportedAt).toLocaleString('zh-CN')}\n编辑区：${pending.data.document.length} 字符 · 已完成学习：${dayCount} 天 · 收藏：${pending.favorites.length} 条 · 待办：${pending.todos ? `${pending.todos.length} 条` : '旧版备份，保留当前待办'} · 便签：${pending.notes ? `${pending.notes.items.length} 张` : '旧版备份，保留当前便签'}`;
       $('backupPreviewError').textContent = '';
       settings.close();
       preview.showModal();
