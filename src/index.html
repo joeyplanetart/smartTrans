@@ -178,8 +178,8 @@
       <div class="modal-head"><h2 id="todoEditTitle">详细待办</h2><button id="todoEditClose" type="button" aria-label="关闭编辑">×</button></div>
       <label for="todoTitle">标题</label><input id="todoTitle" maxlength="300" required>
       <label for="todoDetail">内容</label><textarea id="todoDetail" maxlength="10000" rows="4" placeholder="可选，粘贴或补充更多内容"></textarea>
-      <div class="todo-fields"><label>截止日期<input id="todoDue" type="datetime-local"></label><label>提醒时间<input id="todoReminder" type="datetime-local"></label></div>
-      <div class="todo-fields"><label>优先级<select id="todoPriority"><option value="normal">普通</option><option value="high">高</option><option value="low">低</option></select></label><label>进度 <span id="todoProgressValue">0%</span><input id="todoProgress" type="range" min="0" max="100" step="10" value="0"></label></div>
+      <div class="todo-fields"><label>截止时间<span class="todo-time-field"><span id="todoDueDisplay" aria-hidden="true"></span><input id="todoDue" type="datetime-local" aria-label="截止时间"></span></label><label>提醒时间<span class="todo-time-field"><span id="todoReminderDisplay" aria-hidden="true"></span><input id="todoReminder" type="datetime-local" aria-label="提醒时间"></span></label></div>
+      <div class="todo-fields"><label>优先级<select id="todoPriority"><option value="high">高</option><option value="normal" selected>中</option><option value="low">低</option></select></label><label>进度 <span id="todoProgressValue">0%</span><input id="todoProgress" type="range" min="0" max="100" step="10" value="0"></label></div>
       <label for="todoRepeat">重复</label><select id="todoRepeat"><option value="none">不重复</option><option value="daily">每天</option><option value="weekly">每周</option><option value="monthly">每月</option></select>
       <p class="setting-footnote">完成重复待办后，会按截止日期自动生成下一条。桌面提醒在应用运行时发送。</p>
       <p id="todoEditStatus" class="backup-status" role="alert"></p><button class="primary-button" type="submit">保存待办</button>

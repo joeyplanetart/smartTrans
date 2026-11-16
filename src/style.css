@@ -29,6 +29,9 @@
 .todo-tools span { margin-left: auto; color: var(--muted, #777); }
 .todo-fields > label { flex: 1; min-width: 0; display: grid; gap: 6px; }
 .todo-fields input, .todo-fields select, .todo-edit-dialog textarea, .todo-edit-dialog > input { width: 100%; box-sizing: border-box; }
+.todo-time-field { position: relative; display: flex; align-items: center; min-height: 41px; border: 1px solid #dedee7; border-radius: 8px; padding: 10px; background: #fff; font-weight: 400; }
+.todo-time-field:focus-within { outline: 3px solid #b9b2ff; outline-offset: 2px; }
+.todo-time-field > input[type=datetime-local] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .todos-list { display: grid; gap: 10px; }
 .todo-card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; background: #fff; }
 .todo-card.completed { opacity: .65; }

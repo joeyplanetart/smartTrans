@@ -15,6 +15,21 @@
     return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   }
   function iso(value) { return value ? new Date(value).toISOString() : null; }
+  function tomorrow() {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    date.setSeconds(0, 0);
+    return localInput(date);
+  }
+  function updateTimeDisplays() {
+    for (const [inputId, displayId] of [['todoDue', 'todoDueDisplay'], ['todoReminder', 'todoReminderDisplay']]) {
+      const value = $(inputId).value;
+      if (!value) { $(displayId).textContent = ''; continue; }
+      const date = new Date(value);
+      const year = date.getFullYear() === new Date().getFullYear() ? '' : `${date.getFullYear()}年`;
+      $(displayId).textContent = `${year}${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+  }
   function button(label, action) {
     const element = node('button', 'secondary-button', label);
     element.type = 'button'; element.addEventListener('click', action); return element;
@@ -42,7 +57,7 @@
       if (item.detail) card.append(node('p', 'todo-detail', item.detail));
       const meta = [item.dueAt && `截止 ${new Date(item.dueAt).toLocaleString('zh-CN')}`,
         item.reminderAt && `提醒 ${new Date(item.reminderAt).toLocaleString('zh-CN')}`,
-        item.priority === 'high' ? '高优先级' : item.priority === 'low' ? '低优先级' : null,
+        item.priority === 'high' ? '高优先级' : item.priority === 'low' ? '低优先级' : '中优先级',
         `进度 ${item.progress}%`, { daily: '每天重复', weekly: '每周重复', monthly: '每月重复' }[item.repeat]].filter(Boolean);
       card.append(node('p', 'todo-meta', meta.join(' · ')));
       const actions = node('div', 'todo-actions');
@@ -64,7 +79,9 @@
     editingId = item.id || null;
     $('todoEditTitle').textContent = editingId ? '编辑待办' : '详细待办';
     $('todoTitle').value = item.title || ''; $('todoDetail').value = item.detail || '';
-    $('todoDue').value = localInput(item.dueAt); $('todoReminder').value = localInput(item.reminderAt);
+    $('todoDue').value = item.id ? localInput(item.dueAt) : tomorrow();
+    $('todoReminder').value = localInput(item.reminderAt);
+    updateTimeDisplays();
     $('todoPriority').value = item.priority || 'normal'; $('todoProgress').value = item.progress || 0;
     $('todoProgressValue').textContent = $('todoProgress').value + '%'; $('todoRepeat').value = item.repeat || 'none';
     $('todoEditStatus').textContent = '';
@@ -87,6 +104,13 @@
     catch (error) { status(error.message); }
   });
   $('todoProgress').addEventListener('input', () => { $('todoProgressValue').textContent = $('todoProgress').value + '%'; });
+  for (const input of [$('todoDue'), $('todoReminder')]) {
+    input.addEventListener('click', () => {
+      try { input.showPicker(); } catch { /* Native picker availability varies by platform. */ }
+    });
+    input.addEventListener('input', updateTimeDisplays);
+    input.addEventListener('change', updateTimeDisplays);
+  }
   $('todoQuickForm').addEventListener('submit', async event => {
     event.preventDefault();
     try {
