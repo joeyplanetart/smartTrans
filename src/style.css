@@ -30,6 +30,9 @@
 .todo-quick input, .todo-edit-dialog input:not([type=range]), .todo-edit-dialog textarea { border: 1px solid #dedee7; border-radius: 8px; padding: 10px; background: #fff; }
 #todosStatus:empty { display: none; }
 .todo-fields > label { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.todo-repeat-heading { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.todo-repeat-heading label { margin: 0; }
+.modal .todo-repeat-heading p { margin: 0; color: #858997; font-size: 11px; }
 .todo-fields input, .todo-fields select, .todo-edit-dialog textarea, .todo-edit-dialog > input { width: 100%; box-sizing: border-box; }
 .todo-time-field { position: relative; display: flex; align-items: center; min-height: 41px; border: 1px solid #dedee7; border-radius: 8px; padding: 10px; background: #fff; font-weight: 400; }
 .todo-time-field:focus-within { outline: 3px solid #b9b2ff; outline-offset: 2px; }

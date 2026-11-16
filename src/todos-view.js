@@ -86,8 +86,9 @@
     $('todoDue').value = item.id ? localInput(item.dueAt) : tomorrow();
     $('todoReminder').value = localInput(item.reminderAt);
     updateTimeDisplays();
-    $('todoPriority').value = item.priority || 'normal'; $('todoProgress').value = item.progress || 0;
-    $('todoProgressValue').textContent = $('todoProgress').value + '%'; $('todoRepeat').value = item.repeat || 'none';
+    $('todoPriority').value = item.priority || 'normal';
+    $('todoProgress').value = String(Math.round((item.progress || 0) / 25) * 25);
+    $('todoRepeat').value = item.repeat || 'none';
     $('todoEditStatus').textContent = '';
     if (!editor.open) editor.showModal(); $('todoTitle').focus();
   }
@@ -103,7 +104,6 @@
   $('todosClose').addEventListener('click', () => library.close());
   $('todoEditClose').addEventListener('click', () => editor.close());
   $('todoDetailedNew').addEventListener('click', () => showEditor());
-  $('todoProgress').addEventListener('input', () => { $('todoProgressValue').textContent = $('todoProgress').value + '%'; });
   for (const input of [$('todoDue'), $('todoReminder')]) {
     input.addEventListener('click', () => {
       try { input.showPicker(); } catch { /* Native picker availability varies by platform. */ }
