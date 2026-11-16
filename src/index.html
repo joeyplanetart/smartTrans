@@ -166,7 +166,7 @@
   <dialog id="todosDialog" class="modal todos-dialog" aria-labelledby="todosTitle">
     <div class="modal-content">
       <div class="modal-head"><h2 id="todosTitle">个人待办</h2><button id="todosClose" type="button" aria-label="关闭待办">×</button></div>
-      <div class="todo-intro"><p>快速记下要做的事，内容保存在本机。</p><span id="todosCount"></span></div>
+      <div class="todo-intro"><p>快速记下要做的事，内容保存在本机。</p><div class="todo-intro-actions"><span id="todosCount"></span><button id="todoDesktopOpen" class="text-button" type="button">桌面查看 ↗</button></div></div>
       <form id="todoQuickForm" class="todo-quick"><input id="todoQuickTitle" maxlength="300" required placeholder="输入标题，按回车新增" aria-label="待办标题"><button class="primary-button" type="submit">新增</button><button id="todoDetailedNew" class="secondary-button" type="button">详细新增</button></form>
       <p id="todosStatus" class="backup-status" role="status"></p>
       <div id="todosList" class="todos-list"></div>

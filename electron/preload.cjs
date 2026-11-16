@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld("smartTrans", {
   completeTodo: (id, complete) => ipcRenderer.invoke('todos-complete', id, complete),
   removeTodo: id => ipcRenderer.invoke('todos-remove', id),
   onTodoSelection: callback => ipcRenderer.on('todo-selection', (_event, payload) => callback(payload)),
+  openDesktopTodos: () => ipcRenderer.invoke('todo-view-open'),
+  onTodosChanged: callback => ipcRenderer.on('todos-changed', () => callback()),
   exportBackup: data => ipcRenderer.invoke("backup-export", data),
   openBackup: () => ipcRenderer.invoke("backup-open"),
   restoreBackupFavorites: () => ipcRenderer.invoke("backup-restore-favorites"),

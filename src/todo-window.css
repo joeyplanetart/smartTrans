@@ -1,0 +1,24 @@
+:root { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: #293138; background: #f8f8f7; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 270px; }
+button { font: inherit; cursor: pointer; }
+header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 18px 12px; background: #f8f8f7; }
+header div { display: flex; align-items: baseline; gap: 8px; }
+header strong { font-size: 15px; }
+header span, footer span { color: #858b91; font-size: 11px; }
+header button { border: 1px solid #ddd9f7; border-radius: 7px; background: #f0eeff; color: #5b50ae; padding: 5px 9px; font-size: 11px; }
+header button[aria-pressed=false] { background: #fff; color: #777; border-color: #ddd; }
+main { display: grid; gap: 8px; padding: 4px 14px 58px; }
+.item { display: flex; gap: 10px; align-items: flex-start; width: 100%; min-height: 48px; border: 1px solid #e2e1e5; border-radius: 9px; padding: 10px; background: #fff; color: inherit; text-align: left; }
+.item:hover { border-color: #aaa4e9; background: #fcfbff; }
+.item:focus-visible, footer button:focus-visible, header button:focus-visible { outline: 3px solid #b9b2ff; outline-offset: 2px; }
+.check { flex: none; display: grid; place-items: center; width: 17px; height: 17px; border: 1.5px solid #9c9aa7; border-radius: 5px; margin-top: 1px; }
+.body { min-width: 0; }
+.body strong { display: block; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.body .detail { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: 3px; color: #6e757a; font-size: 11px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.body small { display: block; margin-top: 3px; color: #84898e; font-size: 10px; line-height: 1.4; }
+.empty { padding: 55px 12px; color: #92979b; text-align: center; font-size: 12px; }
+#status { margin: 0 16px 48px; color: #a34343; font-size: 11px; }
+#status:empty { display: none; }
+footer { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; border-top: 1px solid #e8e7eb; background: #f8f8f7; }
+footer button { border: 0; background: transparent; color: #6258bc; font-size: 11px; }

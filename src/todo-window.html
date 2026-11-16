@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>桌面待办 · smartTrans</title>
+  <link rel="stylesheet" href="./todo-window.css">
+</head>
+<body>
+  <header><div><strong>桌面待办</strong><span id="count"></span></div><button id="pin" type="button" aria-pressed="true">置顶</button></header>
+  <main id="list" aria-label="未完成待办"></main>
+  <p id="status" role="status"></p>
+  <footer><span>点击待办即可完成</span><button id="openMain" type="button">打开待办本 ↗</button></footer>
+  <script src="./todo-window.js"></script>
+</body>
+</html>

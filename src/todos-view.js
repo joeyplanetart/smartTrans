@@ -119,6 +119,8 @@
     await refresh(); status('');
   }
   $('todosButton').addEventListener('click', () => openLibrary().catch(error => status(error.message)));
+  $('todoDesktopOpen').addEventListener('click', () => window.smartTrans.openDesktopTodos().catch(error => status(error.message)));
+  window.smartTrans.onTodosChanged?.(() => { if (library.open) refresh().catch(error => status(error.message)); });
   $('todosClose').addEventListener('click', () => library.close());
   $('todoEditClose').addEventListener('click', () => editor.close());
   $('todoDetailedNew').addEventListener('click', () => showEditor());

@@ -78,3 +78,29 @@ test('clicking a todo card toggles completion without hijacking edit or delete',
     expect(store.list().find(value => value.id === item.id).completedAt).toBeNull();
   } finally { dom.window.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('desktop todo viewer shows open items and completes them', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'smart-desktop-todos-'));
+  const dom = new JSDOM(fs.readFileSync(path.join(__dirname, '../src/todo-window.html'), 'utf8'),
+    { url: 'https://smarttrans.local', runScripts: 'outside-only' });
+  try {
+    const store = new Todos(dir), item = store.save({ title: '桌面任务' });
+    let changed;
+    dom.window.desktopTodos = {
+      list: async () => ({ ok: true, items: store.list(), pinned: true }),
+      complete: async id => { store.complete(id); return { ok: true }; },
+      setPinned: async value => value,
+      openMain: async () => true,
+      onChanged: callback => { changed = callback; },
+    };
+    dom.window.eval(fs.readFileSync(path.join(__dirname, '../src/todo-window.js'), 'utf8'));
+    const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+    await tick();
+    expect(dom.window.document.querySelector('.item').textContent).toContain('桌面任务');
+    dom.window.document.querySelector('.item').click(); await tick();
+    expect(store.list().find(value => value.id === item.id).completedAt).not.toBeNull();
+    expect(dom.window.document.querySelector('.item')).toBeNull();
+    store.save({ title: '新任务' }); changed(); await tick();
+    expect(dom.window.document.querySelector('.item').textContent).toContain('新任务');
+  } finally { dom.window.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});

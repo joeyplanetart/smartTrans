@@ -14,6 +14,7 @@ const { detectLanguage } = require('../src/editor-core.js');
 const { Speech } = require("./speech.cjs");
 const speech = new Speech();
 let mainWindow;
+let todoWindow;
 let tray;
 let quitting = false;
 let activeTranslation;
@@ -98,6 +99,25 @@ function fromMainWindow(event) {
   if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error("Invalid caller");
 }
 
+function openDesktopTodos() {
+  if (todoWindow && !todoWindow.isDestroyed()) { todoWindow.show(); todoWindow.focus(); return; }
+  const area = screen.getPrimaryDisplay().workArea;
+  todoWindow = new BrowserWindow({ width: 340, height: 450, minWidth: 270, minHeight: 220,
+    x: area.x + area.width - 370, y: area.y + 80, title: '桌面待办 · smartTrans',
+    backgroundColor: '#f8f8f7', alwaysOnTop: true,
+    webPreferences: { preload: path.join(__dirname, 'todo-window-preload.cjs'), contextIsolation: true,
+      nodeIntegration: false, sandbox: true } });
+  todoWindow.loadFile(path.join(__dirname, '..', 'src', 'todo-window.html'));
+  todoWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  todoWindow.webContents.on('will-navigate', event => event.preventDefault());
+  todoWindow.on('close', event => { if (!quitting) { event.preventDefault(); todoWindow.hide(); } });
+  todoWindow.on('closed', () => { todoWindow = null; });
+}
+
+function fromTodoWindow(event) {
+  if (!todoWindow || event.sender !== todoWindow.webContents) throw new Error('无效的桌面待办窗口。');
+}
+
 function openNote(item) {
   let window = noteWindows.get(item.id);
   if (window && !window.isDestroyed()) { window.show(); window.focus(); return; }
@@ -141,6 +161,10 @@ app.whenReady().then(() => {
   if (!primaryInstance) return;
   const favorites = new Favorites(app.getPath("userData"));
   const todos = new Todos(app.getPath('userData'));
+  const publishTodos = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('todos-changed');
+    if (todoWindow && !todoWindow.isDestroyed()) todoWindow.webContents.send('todos-changed');
+  };
   function checkTodoReminders() {
     try {
       if (!Notification.isSupported()) return;
@@ -154,9 +178,14 @@ app.whenReady().then(() => {
   setInterval(checkTodoReminders, 30_000);
   checkTodoReminders();
   ipcMain.handle('todos-list', event => { fromMainWindow(event); try { return { ok: true, items: todos.list() }; } catch (error) { return { ok: false, error: error.message }; } });
-  ipcMain.handle('todos-save', (event, payload) => { fromMainWindow(event); try { const item = todos.save(payload); checkTodoReminders(); return { ok: true, item }; } catch (error) { return { ok: false, error: error.message }; } });
-  ipcMain.handle('todos-complete', (event, id, complete) => { fromMainWindow(event); try { return { ok: true, items: todos.complete(id, complete) }; } catch (error) { return { ok: false, error: error.message }; } });
-  ipcMain.handle('todos-remove', (event, id) => { fromMainWindow(event); try { todos.remove(id); return { ok: true }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-save', (event, payload) => { fromMainWindow(event); try { const item = todos.save(payload); checkTodoReminders(); publishTodos(); return { ok: true, item }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-complete', (event, id, complete) => { fromMainWindow(event); try { const items = todos.complete(id, complete); publishTodos(); return { ok: true, items }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todos-remove', (event, id) => { fromMainWindow(event); try { todos.remove(id); publishTodos(); return { ok: true }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todo-view-open', event => { fromMainWindow(event); openDesktopTodos(); return true; });
+  ipcMain.handle('todo-view-list', event => { fromTodoWindow(event); try { return { ok: true, items: todos.list(), pinned: todoWindow.isAlwaysOnTop() }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todo-view-complete', (event, id) => { fromTodoWindow(event); try { todos.complete(id); publishTodos(); return { ok: true }; } catch (error) { return { ok: false, error: error.message }; } });
+  ipcMain.handle('todo-view-pin', (event, pinned) => { fromTodoWindow(event); if (typeof pinned !== 'boolean') throw new Error('无效的置顶状态。'); todoWindow.setAlwaysOnTop(pinned, 'floating'); return todoWindow.isAlwaysOnTop(); });
+  ipcMain.handle('todo-view-main', event => { fromTodoWindow(event); showWindow({ type: 'todo' }); return true; });
   notes = new Notes(app.getPath('userData'));
   ipcMain.handle('notes-status', event => { fromMainWindow(event); return { enabled: notes.data.enabled, count: notes.list().length }; });
   ipcMain.handle('notes-enabled', (event, enabled) => {
@@ -335,6 +364,7 @@ app.whenReady().then(() => {
       }
       pendingBackup = null;
       checkTodoReminders();
+      publishTodos();
       return { ok: true };
     } catch (error) { return { ok: false, error: error.message }; }
   });
@@ -518,6 +548,7 @@ app.whenReady().then(() => {
   tray.setToolTip("smartTrans");
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: "打开 smartTrans", click: () => showWindow() },
+    { label: "桌面待办", click: openDesktopTodos },
     { label: "翻译剪贴板", click: clipboardTranslation },
     { type: "separator" },
     { label: "退出", click: () => app.quit() },

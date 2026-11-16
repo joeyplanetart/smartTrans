@@ -26,6 +26,7 @@
 .todo-intro { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 12px 0 16px; }
 .modal .todo-intro p { margin: 0; }
 .todo-intro #todosCount { flex-shrink: 0; color: #777d85; font-size: 11px; white-space: nowrap; }
+.todo-intro-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .todo-quick input { flex: 1; min-width: 0; }
 .todo-quick input, .todo-edit-dialog input:not([type=range]), .todo-edit-dialog textarea { border: 1px solid #dedee7; border-radius: 8px; padding: 10px; background: #fff; }
 #todosStatus:empty { display: none; }
