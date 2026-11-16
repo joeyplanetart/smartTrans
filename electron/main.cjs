@@ -157,7 +157,6 @@ app.whenReady().then(() => {
   ipcMain.handle('todos-save', (event, payload) => { fromMainWindow(event); try { const item = todos.save(payload); checkTodoReminders(); return { ok: true, item }; } catch (error) { return { ok: false, error: error.message }; } });
   ipcMain.handle('todos-complete', (event, id, complete) => { fromMainWindow(event); try { return { ok: true, items: todos.complete(id, complete) }; } catch (error) { return { ok: false, error: error.message }; } });
   ipcMain.handle('todos-remove', (event, id) => { fromMainWindow(event); try { todos.remove(id); return { ok: true }; } catch (error) { return { ok: false, error: error.message }; } });
-  ipcMain.handle('todos-clipboard', event => { fromMainWindow(event); return clipboard.readText(); });
   notes = new Notes(app.getPath('userData'));
   ipcMain.handle('notes-status', event => { fromMainWindow(event); return { enabled: notes.data.enabled, count: notes.list().length }; });
   ipcMain.handle('notes-enabled', (event, enabled) => {

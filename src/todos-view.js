@@ -50,20 +50,24 @@
       const check = node('input'); check.type = 'checkbox'; check.checked = Boolean(item.completedAt);
       check.setAttribute('aria-label', item.completedAt ? '恢复待办' : '完成待办');
       check.addEventListener('change', async () => {
-        try { const result = await window.smartTrans.completeTodo(item.id, check.checked); if (!result.ok) throw new Error(result.error); await refresh(); status(check.checked ? '已完成待办。' : '已恢复待办。'); }
+        try { const result = await window.smartTrans.completeTodo(item.id, check.checked); if (!result.ok) throw new Error(result.error); await refresh(); status(''); }
         catch (error) { check.checked = !check.checked; status(error.message); }
       });
       head.append(check, node('strong', '', item.title)); card.append(head);
       if (item.detail) card.append(node('p', 'todo-detail', item.detail));
-      const meta = [item.dueAt && `截止 ${new Date(item.dueAt).toLocaleString('zh-CN')}`,
-        item.reminderAt && `提醒 ${new Date(item.reminderAt).toLocaleString('zh-CN')}`,
-        item.priority === 'high' ? '高优先级' : item.priority === 'low' ? '低优先级' : '中优先级',
-        `进度 ${item.progress}%`, { daily: '每天重复', weekly: '每周重复', monthly: '每月重复' }[item.repeat]].filter(Boolean);
-      card.append(node('p', 'todo-meta', meta.join(' · ')));
+      const simple = !item.detail && !item.dueAt && !item.reminderAt && item.priority === 'normal' &&
+        (item.progress === 0 || (item.completedAt && item.progress === 100)) && item.repeat === 'none';
+      if (!simple) {
+        const meta = [item.dueAt && `截止 ${new Date(item.dueAt).toLocaleString('zh-CN')}`,
+          item.reminderAt && `提醒 ${new Date(item.reminderAt).toLocaleString('zh-CN')}`,
+          item.priority === 'high' ? '高优先级' : item.priority === 'low' ? '低优先级' : null,
+          item.progress > 0 && `进度 ${item.progress}%`, { daily: '每天重复', weekly: '每周重复', monthly: '每月重复' }[item.repeat]].filter(Boolean);
+        if (meta.length) card.append(node('p', 'todo-meta', meta.join(' · ')));
+      }
       const actions = node('div', 'todo-actions');
       actions.append(button('编辑', () => showEditor(item)), button('删除', async () => {
         if (!confirm(`删除待办「${item.title}」？`)) return;
-        try { const result = await window.smartTrans.removeTodo(item.id); if (!result.ok) throw new Error(result.error); await refresh(); status('已删除。'); }
+        try { const result = await window.smartTrans.removeTodo(item.id); if (!result.ok) throw new Error(result.error); await refresh(); status(''); }
         catch (error) { status(error.message); }
       }));
       card.append(actions); list.append(card);
@@ -89,20 +93,16 @@
   }
   async function fromText(text) {
     const value = text.trim();
-    if (!value) { status('剪贴板没有文字内容。'); return; }
+    if (!value) return;
     const title = value.split(/\r?\n/).find(line => line.trim())?.trim().slice(0, 300) || value.slice(0, 300);
     const result = await window.smartTrans.saveTodo({ title, detail: value.slice(0, 10000) });
     if (!result.ok) throw new Error(result.error);
-    await refresh(); status('已从内容新增待办。');
+    await refresh(); status('');
   }
   $('todosButton').addEventListener('click', () => openLibrary().catch(error => status(error.message)));
   $('todosClose').addEventListener('click', () => library.close());
   $('todoEditClose').addEventListener('click', () => editor.close());
   $('todoDetailedNew').addEventListener('click', () => showEditor());
-  $('todoFromClipboard').addEventListener('click', async () => {
-    try { await fromText(await window.smartTrans.readTodoClipboard()); }
-    catch (error) { status(error.message); }
-  });
   $('todoProgress').addEventListener('input', () => { $('todoProgressValue').textContent = $('todoProgress').value + '%'; });
   for (const input of [$('todoDue'), $('todoReminder')]) {
     input.addEventListener('click', () => {
@@ -116,7 +116,7 @@
     try {
       const result = await window.smartTrans.saveTodo({ title: $('todoQuickTitle').value });
       if (!result.ok) throw new Error(result.error);
-      $('todoQuickTitle').value = ''; await refresh(); status('已新增待办。'); $('todoQuickTitle').focus();
+      $('todoQuickTitle').value = ''; await refresh(); status(''); $('todoQuickTitle').focus();
     } catch (error) { status(error.message); }
   });
   $('todoEditForm').addEventListener('submit', async event => {
@@ -127,7 +127,7 @@
         reminderAt: iso($('todoReminder').value), priority: $('todoPriority').value,
         progress: Number($('todoProgress').value), repeat: $('todoRepeat').value });
       if (!result.ok) throw new Error(result.error);
-      editor.close(); await refresh(); status('已保存待办。');
+      editor.close(); await refresh(); status('');
     } catch (error) { $('todoEditStatus').textContent = error.message; }
   });
   window.smartTrans.onTodoSelection(({ text }) => { openLibrary().then(() => fromText(text)).catch(error => status(error.message)); });
