@@ -2,6 +2,7 @@ const { test, expect } = require('bun:test');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { JSDOM } = require('jsdom');
 const { Todos, nextOccurrence } = require('../electron/todos.cjs');
 const { createBackup, validateBackup } = require('../electron/backup.cjs');
 
@@ -45,4 +46,35 @@ test('monthly repetition clamps to the last day and backup preserves todos', () 
     expect(createBackup(data, [], null, [todo]).todos[0].title).toBe('备份任务');
     expect(validateBackup({ ...createBackup(data, []), todos: null }).todos).toBeNull();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('clicking a todo card toggles completion without hijacking edit or delete', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'smart-todos-view-'));
+  const dom = new JSDOM(fs.readFileSync(path.join(__dirname, '../src/index.html'), 'utf8'),
+    { url: 'https://smarttrans.local', runScripts: 'outside-only' });
+  try {
+    const store = new Todos(dir), item = store.save({ title: '点击完成' });
+    const win = dom.window, doc = win.document;
+    win.HTMLDialogElement.prototype.showModal = function() { this.open = true; };
+    win.HTMLDialogElement.prototype.close = function() { this.open = false; };
+    win.smartTrans = {
+      listTodos: async () => ({ ok: true, items: store.list() }),
+      completeTodo: async (id, complete) => ({ ok: true, items: store.complete(id, complete) }),
+      saveTodo: async value => ({ ok: true, item: store.save(value) }),
+      removeTodo: async id => { store.remove(id); return { ok: true }; },
+      onTodoSelection: () => {}, onDesktopAction: () => {},
+    };
+    win.eval(fs.readFileSync(path.join(__dirname, '../src/todos-view.js'), 'utf8'));
+    const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+    doc.getElementById('todosButton').click(); await tick();
+    doc.querySelector('.todo-card strong').click(); await tick();
+    expect(store.list()[0].completedAt).not.toBeNull();
+    doc.querySelector('.todo-actions button').click(); await tick();
+    expect(doc.getElementById('todoEditDialog').open).toBe(true);
+    expect(store.list()[0].completedAt).not.toBeNull();
+    doc.getElementById('todoEditDialog').close();
+    const card = doc.querySelector('.todo-card');
+    card.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick();
+    expect(store.list().find(value => value.id === item.id).completedAt).toBeNull();
+  } finally { dom.window.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

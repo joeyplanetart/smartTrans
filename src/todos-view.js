@@ -46,12 +46,30 @@
     if (!items.length) { list.append(node('p', 'favorites-empty', '还没有待办。输入标题后按回车即可新增。')); return; }
     for (const item of items) {
       const card = node('article', 'todo-card' + (item.completedAt ? ' completed' : ''));
+      card.tabIndex = 0;
+      card.setAttribute('aria-label', `${item.completedAt ? '恢复' : '完成'}待办：${item.title}`);
       const head = node('div', 'todo-card-head');
       const check = node('input'); check.type = 'checkbox'; check.checked = Boolean(item.completedAt);
       check.setAttribute('aria-label', item.completedAt ? '恢复待办' : '完成待办');
-      check.addEventListener('change', async () => {
-        try { const result = await window.smartTrans.completeTodo(item.id, check.checked); if (!result.ok) throw new Error(result.error); await refresh(); status(''); }
-        catch (error) { check.checked = !check.checked; status(error.message); }
+      let updating = false;
+      async function toggle(complete) {
+        if (updating) return;
+        updating = true;
+        try {
+          const result = await window.smartTrans.completeTodo(item.id, complete);
+          if (!result.ok) throw new Error(result.error);
+          await refresh(); status('');
+        } catch (error) { check.checked = Boolean(item.completedAt); status(error.message); }
+        finally { updating = false; }
+      }
+      check.addEventListener('change', () => toggle(check.checked));
+      card.addEventListener('click', event => {
+        if (event.target.closest('button, input')) return;
+        toggle(!item.completedAt);
+      });
+      card.addEventListener('keydown', event => {
+        if (event.target !== card || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault(); toggle(!item.completedAt);
       });
       head.append(check, node('strong', '', item.title)); card.append(head);
       if (item.detail) card.append(node('p', 'todo-detail', item.detail));
